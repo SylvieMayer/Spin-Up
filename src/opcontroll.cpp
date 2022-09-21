@@ -6,35 +6,23 @@
 double real_left = 0;
 double real_right = 0;
 double deadzone = 5;
-void drive(double left, double right)
-{
-  left = left*100;
-  right = right*100;
-  if (abs(left) > deadzone)
-    {
+void drive(double left, double right){
+    left = left*100;
+    right = right*100;
+    if (std::abs(left) > deadzone){
       real_left=-left*1.05 + 5;
-      leftDrive1.move_voltage(real_left*120);
-      leftDrive2.move_voltage(real_left*120);
-      leftDrive3.move_voltage(real_left*120);
+      leftDrive.move_voltage(real_left*120);
+    }
+    else {
+      leftDrive.move_velocity(0);
+    }
+    if (std::abs(right) > deadzone){
+      real_right=-right*1.05 + 5;
+      rightDrive.move_voltage(real_right*120);
     }
     else{
-      leftDrive1.move_velocity(0);
-      leftDrive2.move_velocity(0);
-      leftDrive3.move_velocity(0);
-   }
-   if (abs(right) > deadzone)
-   {
-      real_right=-right*1.05 + 5;
-      rightDrive1.move_voltage(-real_right*120);
-      rightDrive2.move_voltage(-real_right*120);
-      rightDrive3.move_voltage(-real_right*120);
-   }
-   else
-   {
-      rightDrive1.move_velocity(0);
-      rightDrive2.move_velocity(0);
-      rightDrive3.move_velocity(0);
-   }
+      rightDrive.move_velocity(0);
+    }
 }
 int flywheelRPMTarget = 0;
 void flywheelCont()

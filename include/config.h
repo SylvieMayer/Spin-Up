@@ -1,4 +1,6 @@
 #pragma once
+#include "main.h"
+#include "pros/motors.hpp"
 
 extern pros::Controller master;
 
@@ -12,6 +14,8 @@ extern pros::Motor rightDrive3;
 extern pros::Motor flywheel;
 extern pros::Motor intake;
 
+extern pros::Motor_Group leftDrive;
+extern pros::Motor_Group rightDrive;
 //sensors
 
 

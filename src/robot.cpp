@@ -17,13 +17,18 @@ pros::Controller master(pros::E_CONTROLLER_MASTER);
     -Zeke
 */ 
 
-pros::Motor leftDrive1(1);
-pros::Motor leftDrive2(2);
-pros::Motor leftDrive3(3);
-pros::Motor rightDrive1(4);
-pros::Motor rightDrive2(5);
-pros::Motor rightDrive3(6);
-pros::Motor flywheel(11);
-pros::Motor intake(12);
+
+pros::Motor flywheel(17, true);
+pros::Motor intake(14);
+
+pros::Motor leftDrive1(11, false);
+pros::Motor leftDrive2(12, false);
+pros::Motor leftDrive3(13, false);
+pros::Motor rightDrive1(15, true);
+pros::Motor rightDrive2(16, true);
+pros::Motor rightDrive3(20, true);
+
+pros::Motor_Group leftDrive({leftDrive1, leftDrive2, leftDrive3});
+pros::Motor_Group rightDrive({rightDrive1, rightDrive2, rightDrive3});
 
 //sensors
