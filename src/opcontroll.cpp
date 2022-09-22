@@ -30,15 +30,15 @@ void flywheelCont()
     //update button placement later
     if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A))
     {
-        flywheelRPMTarget = 50;
+        flywheelRPMTarget = 0;
     }
     if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
     {
-        flywheelRPMTarget = 100;
+        flywheelRPMTarget = 150;
     }
     if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
     {
-        flywheelRPMTarget = 150;
+        flywheelRPMTarget = 175;
     }
     if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
     {
