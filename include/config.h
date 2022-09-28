@@ -23,4 +23,6 @@ extern pros::Motor_Group rightDrive;
 void drive(double left, double right);
 void flywheelCont();
 void intakeCont();
+
 //variables
+extern int flywheelRPMTarget;

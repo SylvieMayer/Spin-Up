@@ -1,4 +1,6 @@
 #include "main.h"
+#include "config.h"
+#include "pros/rtos.hpp"
 /*
 	IMPORTANT
 	Please avoid creating functions in this folder
