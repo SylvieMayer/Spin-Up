@@ -34,6 +34,8 @@ double power;
 
 void flywheel_speed_set(){
     currentSpeed = flywheel.get_actual_velocity();
+    pros::lcd::set_text(1, std::to_string(currentSpeed));
+
     speedDifference = flywheelRPMTarget - currentSpeed;
     if (flywheelRPMTarget > 0){
         if (flywheelRPMTarget == 500){
@@ -69,7 +71,7 @@ void flywheelCont()
         }
         if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
         {
-            flywheelRPMTarget = 175;
+            flywheelRPMTarget = 100;
         }
         if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
