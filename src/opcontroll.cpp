@@ -137,15 +137,15 @@ void flywheel_speed_set(){
     if(power > 12000){
         power = 12000;
     }
-    // pros::lcd::set_text(0, std::to_string(ema));
-    // pros::lcd::set_text(1, std::to_string(flywheelRPMTarget));
+    pros::lcd::set_text(0, std::to_string(ema));
+    pros::lcd::set_text(1, std::to_string(flywheelRPMTarget));
 
-    // pros::lcd::set_text(2, std::to_string(power));
-    // pros::lcd::set_text(3, std::to_string(ema_error));
-    // pros::lcd::set_text(4, std::to_string(integral));
-    // pros::lcd::set_text(5, std::to_string(flywheelCurrentLimit));
-    // pros::lcd::set_text(6, std::to_string(flywheel.get_temperature()));
-    // pros::lcd::set_text(7, std::to_string(std::abs(error)));
+    pros::lcd::set_text(2, std::to_string(power));
+    pros::lcd::set_text(3, std::to_string(ema_error));
+    pros::lcd::set_text(4, std::to_string(integral));
+    pros::lcd::set_text(5, std::to_string(flywheelCurrentLimit));
+    pros::lcd::set_text(6, std::to_string(flywheel.get_temperature()));
+    pros::lcd::set_text(7, std::to_string(std::abs(error)));
     int32_t diffTime = (currentTime-flywheelMotorTimestamp);
     int32_t diffyDiff = diffTime - oldDiff;
     oldDiff = diffTime;//                                                0           1            2   3         4                 5     6             7            8                          9       10 11                     12            13       14        15           16                 17       18         
