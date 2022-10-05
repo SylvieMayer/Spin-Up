@@ -151,7 +151,7 @@ void flywheel_speed_set(){
     oldDiff = diffTime;//                                                0           1            2   3         4                 5     6             7            8                          9       10 11                     12            13       14        15           16                 17       18         
     printf("%d|%f|%f|%f|%d|%f|%f|%f|%f|%f|%f|%d|%d|%d|%d|%f|%d|%f|%f \n",currentTime,sma_velocity,ema,ema_error,flywheelRPMTarget,error,actualCurrent,realVelocity,internalVelocityMeasure*18,raw_ema,dP,flywheelMotorTimestamp,timestampDiff,diffTime,diffyDiff,currentTicks,vexSystemTimeGet()); 
     // printf("%d|%d|%d \n",currentTime,flywheelMotorTimestamp,vexSystemTimeGet());
-    flywheel.move_voltage(8000);
+    flywheel.move_voltage(power);
 }
 
 void flywheelCont()
