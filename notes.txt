@@ -1,0 +1,26 @@
+action             delta t      total t
+
+update value       5ms         5ms
+update value       5ms         10ms
+user cpu gets info 0ms         10ms 
+update value       5ms         15ms
+update value       5ms         20ms
+user cpu gets info 0ms         20ms 
+update value       5ms         25ms
+user cpu gets info 4ms         29ms  <-- user gets 5ms old data, reads at 30ms so assumes it's data from 30ms
+update value       1ms         30ms
+update value       5ms         35ms
+update value       5ms         40ms  
+user cpu gets info 0ms         40ms  <-- user gets current data, is told it was 10ms worth, is actually 15
+update value       5ms         45ms
+user cpu gets info 4ms         49ms  <-- user gets 5ms old data (from 45ms), assumes it's from 50ms
+update value       1ms         50ms
+update value       5ms         55ms
+user cpu gets info 4ms         59ms  <-- user gets 5ms old data (from 55ms), assumes it's from 60ms
+update value       1ms         60ms
+update value       5ms         65ms
+update value       4ms         69ms  
+user cpu gets info 0ms         69ms  <-- user gets current data, but assumes its from 70ms not 69ms
+update value       5ms         74ms
+update value       5ms         79ms  
+user cpu gets info 0ms         79ms  <-- user gets current data, but assumes its from 80ms not 79ms

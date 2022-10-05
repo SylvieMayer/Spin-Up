@@ -1,6 +1,7 @@
 #include "main.h"
 #include "config.h"
 #include "pros/rtos.hpp"
+#include <cstdint>
 /*
 	IMPORTANT
 	Please avoid creating functions in this folder
@@ -10,7 +11,7 @@
 	
 	Thanks -Zeke
 */
-
+double initStartTime = 0;
 /**
  * A callback function for LLEMU's center button.
  *
@@ -36,6 +37,7 @@ void on_center_button()
  */
 void initialize() 
 {
+	initStartTime = pros::millis();
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, "Hello PROS User!");
 	pros::lcd::register_btn1_cb(on_center_button);
@@ -91,12 +93,11 @@ void opcontrol()
 {
 	while (true) 
 	{
-		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
+		std::uint32_t now = pros::millis();
 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
 		flywheelCont();
 		intakeCont();
-		pros::delay(20);
+		// pros::Task::delay_until(&now,10);
+		pros::delay(1);
 	}
 }
