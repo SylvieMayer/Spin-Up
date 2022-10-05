@@ -177,7 +177,16 @@ void flywheelCont()
         {
             flywheelRPMTarget = 3600;
         }
+        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP))
+        {
+            flywheelRPMTarget = flywheelRPMTarget + 50;
+        }
+        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN))
+        {
+            flywheelRPMTarget = flywheelRPMTarget - 50;
+        }
     }
+    master.print(0, 0, "%d", flywheelRPMTarget);
     flywheel_speed_set();
 }
 
