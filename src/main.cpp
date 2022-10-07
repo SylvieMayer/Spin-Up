@@ -97,7 +97,6 @@ void opcontrol()
 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
 		flywheelCont();
 		intakeCont();
-		// pros::Task::delay_until(&now,10);
-		pros::delay(1);
+		pros::Task::delay_until(&now,10);
 	}
 }
