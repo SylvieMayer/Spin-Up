@@ -18,11 +18,11 @@ extern "C" void vPortEnterCritical();
 namespace sylib {
     class EMAFilter {
         private:
-            double kA;
+            double inputkA;
             double ema;
         public:
-            EMAFilter(double kA);
-            double filter(double rawValue);
+            EMAFilter();
+            double filter(double rawValue, double kA);
             double getkA() const;
             double getCurrentEMA() const;
     };
@@ -60,6 +60,22 @@ namespace sylib {
             double getCurrentValue() const;
     };
 
+    class SympleDerivativeSolver{
+        private:
+            double currentInputFunctionValue;
+            double previousInputFunctionValue;
+            double deltaInputFunctionValue;
+            uint32_t currentTime;
+            uint32_t previousTime;
+            uint32_t dT;
+            double derivativeFunctionValue;
+        public:
+            SympleDerivativeSolver();
+            double solveDerivative(double input);
+            double getCurrentDerivative();
+            double getCurrentInputValue();
+    };
+
     class SylviesPogVelocityEstimator{
         private:
             pros::Motor * smartMotor;
@@ -70,24 +86,48 @@ namespace sylib {
             double dN;
             double dT;
             double rawVelocity;
-            double speedTarget;
             double motorVoltageTarget;
             double smaFilteredVelocity;
             double medianFilteredVelocity;
             double emaFilteredVelocity;
+            double smaFilteredAccel;
+            double smaFilteredJerk;
+            double smaFilteredSnap;
             double motorGearing;
             double outputVelocity;
-            sylib::SMAFilter smaFilter;
+            double preFilterAcceleration;
+            double preFilterJerk;
+            double preFilterSnap;
+            double outputAcceleration;
+            double outputJerk;
+            double outputSnap;
+            double accelCalculatedkA;
+            double vexosRawVelocity;
+            sylib::SMAFilter smaFilterVelocity;
+            sylib::SMAFilter smaFilterAccel;
+            sylib::SMAFilter smaFilterJerk;
+            sylib::SMAFilter smaFilterSnap;
             sylib::EMAFilter emaFilter;
             sylib::MedianFilter medianFilter;
+            sylib::SympleDerivativeSolver preFilterAccelSolver;
+            sylib::SympleDerivativeSolver preFilterJerkSolver;
+            sylib::SympleDerivativeSolver preFilterSnapSolver;
+            sylib::SympleDerivativeSolver outputAccelSolver;
+            sylib::SympleDerivativeSolver outputJerkSolver;
+            sylib::SympleDerivativeSolver outputSnapSolver;
         public:
             SylviesPogVelocityEstimator(pros::Motor * smartMotor, double motorGearing = 200);
             double getVelocity();
             double getVelocityNoCalculations();
             double getRawVelocity();
+            double getVexosWrongVelocity();
             double getRawPosition();
             double getSmaFilteredVelocity();
             double getEmaFilteredVelocity();
             double getMedianFilteredVelocity();
+            double getAcceleration();
+            double getJerk();
+            double getSnap();
+            double getCalculatedkA();
     };
 }

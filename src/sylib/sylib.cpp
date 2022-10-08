@@ -1,20 +1,20 @@
 #include "sylib/sylib.hpp"
 #include "pros/motors.hpp"
+#include <cmath>
 #include <iostream>
 
 namespace sylib {
-    EMAFilter::EMAFilter(double kA) : kA(kA){
+    EMAFilter::EMAFilter(){
         ema = 0;
-        if(kA < 0 || kA > 1){
-            throw std::invalid_argument("kA must be between 0 and 1");
-        }
+        inputkA = 1;
     }
-    double EMAFilter::filter(double rawValue){
-        ema = rawValue*kA + ema * (1-kA);
+    double EMAFilter::filter(double rawValue, double kA){
+        inputkA = kA;
+        ema = rawValue*inputkA + ema * (1-inputkA);
         return ema;
     }
     double EMAFilter::getkA() const{
-        return kA;
+        return inputkA;
     }
     double EMAFilter::getCurrentEMA() const{
         return ema;
@@ -133,8 +133,34 @@ namespace sylib {
     double MedianFilter::getCurrentValue() const{
         return medianValue;
     }
+    SympleDerivativeSolver::SympleDerivativeSolver(){
+        currentInputFunctionValue = 0;
+        previousInputFunctionValue = 0;
+        deltaInputFunctionValue = 0;
+        derivativeFunctionValue = 0;
+        previousTime = vexSystemTimeGet();
+    }
+    double SympleDerivativeSolver::solveDerivative(double input){
+        currentInputFunctionValue = input;
+        deltaInputFunctionValue = currentInputFunctionValue - previousInputFunctionValue;
+        previousInputFunctionValue = currentInputFunctionValue;
+        currentTime = vexSystemTimeGet();
+        dT = currentTime - previousTime;
+        previousTime = currentTime;
+        if(dT <= 0){
+            return derivativeFunctionValue;
+        }
+        derivativeFunctionValue = deltaInputFunctionValue/dT;
+        return derivativeFunctionValue;
+    }
+    double SympleDerivativeSolver::getCurrentDerivative(){
+        return derivativeFunctionValue;
+    }
+    double SympleDerivativeSolver::getCurrentInputValue(){
+        return currentInputFunctionValue;
+    }
 
-    SylviesPogVelocityEstimator::SylviesPogVelocityEstimator(pros::Motor * smartMotor, double motorGearing) : smartMotor(smartMotor), smaFilter(3), medianFilter(15,2,3), emaFilter(0.5), motorGearing(motorGearing){
+    SylviesPogVelocityEstimator::SylviesPogVelocityEstimator(pros::Motor * smartMotor, double motorGearing) : smartMotor(smartMotor), smaFilterVelocity(3), smaFilterAccel(3), smaFilterJerk(3), smaFilterSnap(3), medianFilter(15,2,3), emaFilter(0.5), motorGearing(motorGearing), preFilterAccelSolver(), preFilterJerkSolver(), preFilterSnapSolver(), outputAccelSolver(), outputJerkSolver(), outputSnapSolver(){
         internalMotorClock = 0;
         previousInternalMotorClock = 0;
         currentMotorTicks = 0;
@@ -142,17 +168,25 @@ namespace sylib {
         dN = 0;
         dT = 0;
         rawVelocity = 0;
-        speedTarget = 0;
         motorVoltageTarget = 0;
         emaFilteredVelocity = 0;
         smaFilteredVelocity = 0;
+        smaFilteredAccel = 0;
         medianFilteredVelocity = 0;
         outputVelocity = 0;
+        preFilterAcceleration = 0;
+        preFilterJerk = 0;
+        preFilterSnap = 0;
+        outputAcceleration = 0;
+        outputJerk = 0;
+        outputSnap = 0;
+        accelCalculatedkA = 0;
+        vexosRawVelocity = 0;
     }
     double SylviesPogVelocityEstimator::getVelocity(){
         currentMotorTicks = smartMotor->get_raw_position(&internalMotorClock);
+        vexosRawVelocity = smartMotor->get_actual_velocity();
         dT = 5*std::round((internalMotorClock-previousInternalMotorClock)/5.0);
-        printf("%d|%f\n", internalMotorClock-previousInternalMotorClock, dT);
         if(dT == 0){
             return outputVelocity;
         }
@@ -160,10 +194,24 @@ namespace sylib {
         previousInternalMotorClock=internalMotorClock;
         oldMotorTicks = currentMotorTicks;
         rawVelocity = (dN/50)/dT * 60000;
-        smaFilteredVelocity = smaFilter.filter(rawVelocity);
+        smaFilteredVelocity = smaFilterVelocity.filter(rawVelocity);
         medianFilteredVelocity = medianFilter.filter(smaFilteredVelocity);
-        emaFilteredVelocity = emaFilter.filter(medianFilteredVelocity);
+
+        preFilterAcceleration = preFilterAccelSolver.solveDerivative(medianFilteredVelocity);
+        preFilterJerk = preFilterJerkSolver.solveDerivative(preFilterAcceleration);
+        preFilterSnap = preFilterSnapSolver.solveDerivative(preFilterJerk);
+
+        smaFilteredAccel = smaFilterAccel.filter(preFilterAcceleration);
+        smaFilteredJerk = smaFilterJerk.filter(preFilterJerk);
+        smaFilteredSnap = smaFilterSnap.filter(preFilterSnap);
+
+        accelCalculatedkA = 0.75*(1-(1/((smaFilteredAccel*smaFilteredAccel/250)+1)));
+
+        emaFilteredVelocity = emaFilter.filter(medianFilteredVelocity, accelCalculatedkA);
         outputVelocity = emaFilteredVelocity*motorGearing/3600;
+        outputAcceleration = outputAccelSolver.solveDerivative(outputVelocity);
+        outputJerk = outputJerkSolver.solveDerivative(outputAcceleration);
+        outputSnap = outputSnapSolver.solveDerivative(outputJerk);
         return outputVelocity;
     }
     double SylviesPogVelocityEstimator::getVelocityNoCalculations(){
@@ -171,6 +219,9 @@ namespace sylib {
     }
     double SylviesPogVelocityEstimator::getRawVelocity(){
         return rawVelocity;
+    }
+    double SylviesPogVelocityEstimator::getVexosWrongVelocity(){
+        return vexosRawVelocity;
     }
     double SylviesPogVelocityEstimator::getEmaFilteredVelocity(){
         return emaFilteredVelocity;
@@ -183,5 +234,17 @@ namespace sylib {
     }
     double SylviesPogVelocityEstimator::getRawPosition(){
         return currentMotorTicks;
+    }
+    double SylviesPogVelocityEstimator::getAcceleration(){
+        return outputAcceleration;
+    }
+    double SylviesPogVelocityEstimator::getJerk(){
+        return outputJerk;
+    }
+    double SylviesPogVelocityEstimator::getSnap(){
+        return outputSnap;
+    }
+    double SylviesPogVelocityEstimator::getCalculatedkA(){
+        return accelCalculatedkA;
     }
 }
