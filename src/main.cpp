@@ -1,6 +1,8 @@
 #include "main.h"
 #include "config.h"
+#include "pros/adi.hpp"
 #include "pros/rtos.hpp"
+#include "sylib/system.hpp"
 #include <cstdint>
 /*
 	IMPORTANT
@@ -91,12 +93,26 @@ void autonomous() {}
  */
 void opcontrol() 
 {
+	// std::cout << "started \n";
+	// pros::ADILed addrled(3, 16);
+	// std::cout << "created \n";
+	// pros::delay(1000);
+	// addrled.set_all(0xFF0000);
+	// std::cout << "set \n";
+	// addrled.update();
+	// std::cout << "updated \n";
+	// std::cout << "creating obj" << std::endl;
+	printf("creating obj %d\n", sylib::millis());
+	sylib::UpdatingObject testUpdater = sylib::UpdatingObject(2,0);
+	printf("created obj %d\n", sylib::millis());
 	while (true) 
 	{
 		std::uint32_t now = pros::millis();
+		printf("created main task loop %d\n", sylib::millis());
+
 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
-		flywheelCont();
-		intakeCont();
+		// flywheelCont();
+		// intakeCont();
 		pros::Task::delay_until(&now,10);
 	}
 }

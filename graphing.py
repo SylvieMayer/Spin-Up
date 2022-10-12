@@ -63,6 +63,6 @@ with open("data.csv") as f:
                 continue
 rotated = numpy.transpose(data)
 
-plot = px.scatter(x=rotated[0], y=[rotated[1],rotated[2],rotated[4],rotated[5],rotated[6],rotated[7],rotated[8]])
+plot = px.scatter(x=rotated[0], y=[rotated[9],rotated[8],rotated[4],rotated[11]])
 plot.show()
 
