@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include "sylib_apitypes.hpp"
 #include "sylib.hpp"
 #include "system.hpp"
 #include "env.hpp"
@@ -66,15 +66,22 @@ namespace sylib {
         private:
             //SDK things
             const V5_DeviceT device;
+            void set_motor_controller();
             // Config settings
             const std::uint8_t smart_port;
             const double gearing;
-            const bool reverse;
+            bool reversed;
             sylib::SylviesPogVelocityEstimator motorVelocityTracker;
+            sylib::VoltageEstimation motorVoltageEstimator;
+            sylib::ProportionalController motorPController;
+            sylib::IntegralController motorIController;
+            sylib::DerivativeController motorDController;
 
             // Updating values
             uint32_t internalClock;
             double velocity;
+            double velocity_error;
+            double raw_velocity;
             double vexos_velocity;
             double sma_velocity;
             double acceleration;
@@ -94,9 +101,15 @@ namespace sylib {
             std::int32_t stopped;
             std::int32_t over_temp;
             std::int32_t over_current;
-            std::int32_t brake_mode;
+            V5MotorBrakeMode brake_mode;
             std::int32_t current_limit;
             std::int32_t voltage_limit;
+
+            //Target values
+            SylibMotorControlMode sylib_control_mode;
+            double position_target;
+            double velocity_target;
+            std::int32_t voltage_target;
 
 
         public:
@@ -105,45 +118,47 @@ namespace sylib {
             void update();
 
             // Motor control
-            void set_absolute_position_target(double position, std::int32_t velocity);
-            void set_relative_position_target(double position, std::int32_t velocity);
-            void set_velocity_target(std::int16_t velocity);
+            void set_position_target_absolute(double new_position, std::int32_t velocity_cap = 200);
+            void set_position_target_relative(double new_position, std::int32_t velocity_cap = 200);
+            void set_velocity_target(std::int16_t new_velocity_target);
             void stop();
-            void set_voltage(std::int16_t voltage);
-            void set_braking_mode(std::int32_t mode);
+            void set_voltage(std::int16_t new_voltage_target);
+            void set_braking_mode(V5MotorBrakeMode mode);
             void set_amps_limit(std::int32_t limit);
-            void set_gearing(std::int32_t gearing);
             void set_is_reversed(bool reverse);
             void set_volts_limit(std::int32_t limit);
             void tare_encoder();
+            void set_velocity_internal_pid(std::int32_t new_velocity_target);
+            void set_position_absolute_internal_pid(double new_position, std::int32_t velocity_cap = 200);
+            void set_position_relative_internal_pid(double new_position, std::int32_t velocity_cap = 200);
 
             // Motor telemetry
-            double get_position();
-            double get_position_target();
-            double get_velocity();
-            double get_velocity_target();
-            double get_velocity_motor_reported();
-            double get_velocity_raw();
-            double get_velocity_sma_filter_only();
-            double get_acceleration();
-            double get_temperature();
-            double get_torque();
-            double get_watts();
-            std::int32_t get_amps();
-            std::int32_t get_amps_limit();
-            std::int32_t get_applied_voltage();
-            std::int32_t get_volts_limit();
-            std::int32_t get_efficiency();
-            std::int32_t get_faults();
-            std::int32_t get_flags();
-            std::uint32_t get_device_timestamp();
+            double get_position() const;
+            double get_position_target() const;
+            double get_velocity() const;
+            double get_velocity_target() const;
+            double get_velocity_motor_reported() const;
+            double get_velocity_raw() const;
+            double get_velocity_sma_filter_only() const;
+            double get_acceleration() const;
+            double get_temperature() const;
+            double get_torque() const;
+            double get_watts() const;
+            std::int32_t get_amps() const;
+            std::int32_t get_amps_limit() const;
+            std::int32_t get_applied_voltage() const;
+            std::int32_t get_volts_limit() const;
+            std::int32_t get_efficiency() const;
+            std::int32_t get_faults() const;
+            std::int32_t get_flags() const;
+            std::uint32_t get_device_timestamp() const;
             std::int32_t get_position_and_timestamp(std::uint32_t* timestamp);
-            std::int32_t get_braking_mode();
-            std::int32_t get_gearing();
-            std::int32_t get_smart_port();
-            bool is_stopped();
-            bool is_over_current();
-            bool is_over_temp();           
-            bool is_reversed();
+            std::int32_t get_braking_mode() const;
+            std::int32_t get_gearing() const;
+            std::int32_t get_smart_port() const;
+            bool is_stopped() const;
+            bool is_over_current() const;
+            bool is_over_temp() const;
+            bool is_reversed() const;
     };
 }

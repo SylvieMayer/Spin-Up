@@ -95,7 +95,7 @@ class EMAFilter {
             double proportional;
         public:
             ProportionalController(double kP, std::shared_ptr<double> error, double motorGearing = 200);
-            double output();
+            double update();
             double getkP() const;
             double getOutput() const;
             void setkP(double gain);
@@ -113,7 +113,7 @@ class EMAFilter {
             uint32_t dT;
         public:
             IntegralController(double kI, std::shared_ptr<double> error, double motorGearing = 200);
-            double output();
+            double update();
             double getkI() const;
             double getOutput() const;
             double getCurrentTime() const;
@@ -135,7 +135,7 @@ class EMAFilter {
             uint32_t dT;
         public:
             DerivativeController(double kD, std::shared_ptr<double> error, double motorGearing = 200);
-            double output();
+            double update();
             double getkD() const;
             double getOutput() const;
             double getCurrentTime() const;

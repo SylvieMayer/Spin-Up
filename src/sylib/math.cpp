@@ -165,14 +165,14 @@ namespace sylib{
     ProportionalController::ProportionalController(double kP, std::shared_ptr<double> error, double motorGearing): kP(kP), motorGearing(motorGearing), error(error){
         proportional = 0;
     }
-    double ProportionalController::output(){
+    double ProportionalController::update(){
         proportional = *error * kP * motorGearing / 3600;
         return proportional;
     }
     double ProportionalController::getkP() const{return kP;}
     double ProportionalController::getOutput() const{return proportional;}
     void ProportionalController::setkP(double gain){kP = gain;}
-    double ProportionalController::operator*(){return output();}
+    double ProportionalController::operator*(){return getOutput();}
 
     IntegralController::IntegralController(double kI, std::shared_ptr<double> error, double motorGearing) : kI(kI), motorGearing(motorGearing), error(error){
         integral = 0;
@@ -180,7 +180,7 @@ namespace sylib{
         previousTime = currentTime;
         dT = 0;
     }
-    double IntegralController::output(){
+    double IntegralController::update(){
         currentTime = vexSystemTimeGet();
         dT = currentTime - previousTime;
         if (dT <= 0) {
@@ -194,7 +194,7 @@ namespace sylib{
     double IntegralController::getCurrentTime() const{return currentTime;}
     uint32_t IntegralController::getdT() const{return dT;}
     void IntegralController::setkI(double gain){kI = gain;}
-    double IntegralController::operator*(){return output();}
+    double IntegralController::operator*(){return getOutput();}
 
     DerivativeController::DerivativeController(double kD, std::shared_ptr<double> error,  double motorGearing) : kD(kD), motorGearing(motorGearing), error(error){
         derivative = 0;
@@ -205,7 +205,7 @@ namespace sylib{
         previousTime = currentTime;
         dT = 0;
     }
-    double DerivativeController::output(){
+    double DerivativeController::update(){
         currentTime = vexSystemTimeGet();
         currentInput = *error;
         dT = currentTime - previousTime;
@@ -222,5 +222,5 @@ namespace sylib{
     double DerivativeController::getkD() const{return kD;}
     uint32_t DerivativeController::getdT() const{return dT;}
     void DerivativeController::setkD(double gain){kD = gain;}
-    double DerivativeController::operator*(){return output();}
+    double DerivativeController::operator*(){return getOutput();}
 }

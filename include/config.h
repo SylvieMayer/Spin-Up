@@ -11,7 +11,7 @@ extern pros::Motor leftDrive3;
 extern pros::Motor rightDrive1;
 extern pros::Motor rightDrive2;
 extern pros::Motor rightDrive3;
-extern pros::Motor flywheel;
+extern sylib::Motor flywheel;
 extern pros::Motor intake;
 
 extern pros::Motor_Group leftDrive;
