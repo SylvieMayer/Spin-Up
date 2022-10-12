@@ -2,7 +2,6 @@
 #include "main.h"
 #include "pros/misc.h"
 #include "pros/rtos.hpp"
-// #include "sylib/sylib.hpp"
 #include <array>
 #include <cstddef>
 #include <iostream>

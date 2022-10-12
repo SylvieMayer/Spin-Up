@@ -1,10 +1,11 @@
 #include "sylib/motor.hpp"
+#include "sylib/env.hpp"
+#include <cstdint>
+#include <stdint.h>
 
 namespace sylib {
     SylviesPogVelocityEstimator::SylviesPogVelocityEstimator(double motorGearing) : smaFilterVelocity(3), smaFilterAccel(15), smaFilterJerk(3), smaFilterSnap(3), medianFilter(7,2,1), emaFilter(), motorGearing(motorGearing), preFilterAccelSolver(), preFilterJerkSolver(), preFilterSnapSolver(), outputAccelSolver(), outputJerkSolver(), outputSnapSolver(),maxFilterAccel(20){
-        internalMotorClock = 0;
         previousInternalMotorClock = 0;
-        currentMotorTicks = 0;
         oldMotorTicks = 0;
         dN = 0;
         dT = 0;
@@ -22,18 +23,15 @@ namespace sylib {
         outputJerk = 0;
         outputSnap = 0;
         accelCalculatedkA = 0;
-        vexosRawVelocity = 0;
         maxFilteredAccel = 0;
     }
-    double SylviesPogVelocityEstimator::getVelocity(){
-        // currentMotorTicks = smartMotor->get_raw_position(&internalMotorClock);
-        // vexosRawVelocity = smartMotor->get_actual_velocity();
-        dT = 5*std::round((internalMotorClock-previousInternalMotorClock)/5.0);
+    double SylviesPogVelocityEstimator::getVelocity(double currentMotorTicks, std::uint32_t currentInternalMotorClock){
+        dT = 5*std::round((currentInternalMotorClock-previousInternalMotorClock)/5.0);
         if(dT == 0){
             return outputVelocity;
         }
         dN = currentMotorTicks-oldMotorTicks;
-        previousInternalMotorClock=internalMotorClock;
+        previousInternalMotorClock=currentInternalMotorClock;
         oldMotorTicks = currentMotorTicks;
         rawVelocity = (dN/50)/dT * 60000;
         smaFilteredVelocity = smaFilterVelocity.filter(rawVelocity);
@@ -59,15 +57,58 @@ namespace sylib {
     }
     double SylviesPogVelocityEstimator::getVelocityNoCalculations() const{return outputVelocity;}
     double SylviesPogVelocityEstimator::getRawVelocity() const{return rawVelocity;}
-    double SylviesPogVelocityEstimator::getVexosWrongVelocity() const{return vexosRawVelocity;}
     double SylviesPogVelocityEstimator::getEmaFilteredVelocity() const{return emaFilteredVelocity;}
     double SylviesPogVelocityEstimator::getSmaFilteredVelocity() const{return smaFilteredVelocity;}
     double SylviesPogVelocityEstimator::getMedianFilteredVelocity() const{return medianFilteredVelocity;}
-    double SylviesPogVelocityEstimator::getRawPosition() const{return currentMotorTicks;}
     double SylviesPogVelocityEstimator::getAcceleration() const{return outputAcceleration;}
     double SylviesPogVelocityEstimator::getPreFilterAcceleration() const{return preFilterAcceleration;}
     double SylviesPogVelocityEstimator::getJerk() const{return outputJerk;}
     double SylviesPogVelocityEstimator::getSnap() const{return outputSnap;}
     double SylviesPogVelocityEstimator::getCalculatedkA() const{return accelCalculatedkA;}
     double SylviesPogVelocityEstimator::getMaxFilteredAcceleration() const{return maxFilteredAccel;}
+
+
+
+
+    Motor::Motor(const uint8_t smart_port, const double gearing, const bool reverse) : 
+        Device(5,0), smart_port(smart_port), gearing(gearing), reverse(reverse), device(vexDeviceGetByIndex(smart_port-1)){
+        motorVelocityTracker = sylib::SylviesPogVelocityEstimator(gearing);
+        
+    }
+
+    void Motor::update(){
+        printf("%dms - sylib subtask %d updated\n", sylib::millis(), getSubTaskID());
+        mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
+        position = vexDeviceMotorPositionRawGet(device, &internalClock);
+        velocity = motorVelocityTracker.getVelocity(position, internalClock);
+        vexos_velocity = vexDeviceMotorActualVelocityGet(device);
+        sma_velocity = motorVelocityTracker.getSmaFilteredVelocity();
+        acceleration = motorVelocityTracker.getAcceleration();
+        temperature = vexDeviceMotorTemperatureGet(device);
+        power = vexDeviceMotorPowerGet(device);
+        current_draw = vexDeviceMotorCurrentGet(device);
+        direction = vexDeviceMotorDirectionGet(device);
+        efficiency = vexDeviceMotorEfficiencyGet(device);
+        faults = vexDeviceMotorFaultsGet(device);
+        flags = vexDeviceMotorFlagsGet(device);
+        torque = vexDeviceMotorTorqueGet(device);
+        voltage = vexDeviceMotorVoltageGet(device);
+        zero_position_flag = vexDeviceMotorZeroPositionFlagGet(device);
+        over_temp = vexDeviceMotorOverTempFlagGet(device);
+        over_current = vexDeviceMotorCurrentLimitFlagGet(device);
+        brake_mode = vexDeviceMotorBrakeModeGet(device);
+        current_limit = vexDeviceMotorCurrentLimitGet(device);
+        voltage_limit = vexDeviceMotorVoltageLimitGet(device);
+    }
+
+    double Motor::get_actual_velocity(){return velocity;}
+    double Motor::get_vexos_velocity(){return vexos_velocity*gearing/200;}
+    double Motor::get_sma_velocity(){return sma_velocity;}
+    double Motor::get_acceleration(){return acceleration;}
+
+    std::int32_t Motor::move_voltage(std::int16_t voltage){
+        mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
+        vexDeviceMotorVoltageSet(device, voltage);
+        return 1;
+    }
 }

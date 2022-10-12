@@ -1,5 +1,5 @@
 #include "system.hpp"
-#include "vex/v5_api.h"
+#include "sylib/env.hpp"
 #include <iostream>
 #include <stdint.h>
 
@@ -10,6 +10,7 @@ namespace sylib {
         #elif defined(SYLIB_ENV_VEXCODE)
         std::uint32_t time = *prev_time + delta;
         vex::this_thread::sleep_until(time);  
+        *prev_time = time;
         #endif
     }
     void delay(uint32_t delay){
@@ -37,81 +38,109 @@ namespace sylib {
     bool Mutex::try_lock_for(){return 0;}
     bool Mutex::try_lock_until(){return 0;}
 
+    Mutex sylib_port_mutexes[V5_MAX_DEVICE_PORTS]; 
+
     SylibDaemon::SylibDaemon(): managerTask(sylib::Task(managerTaskFunction)) {} // 
     SylibDaemon::~SylibDaemon(){}
     SylibDaemon& SylibDaemon::getInstance(){
         mutex_lock _lock(mutex);
+        static SylibDaemon instance;
 	    return instance;
     }
-    int SylibDaemon::createSubTask(sylib::UpdatingObject * objectPointerToSchedule){
+    int SylibDaemon::createSubTask(sylib::Device  * objectPointerToSchedule){
         mutex_lock _lock(mutex);
         subTasksCreated++;
         livingSubTasks.push_back(objectPointerToSchedule);
         return subTasksCreated;
         return 1;
     }
-    void SylibDaemon::removeSubTask(sylib::UpdatingObject *objectPointerToSchedule){
+    void SylibDaemon::removeSubTask(sylib::Device  *objectPointerToSchedule){
         mutex_lock _lock(mutex);
         livingSubTasks.erase(std::remove(livingSubTasks.begin(), livingSubTasks.begin(), objectPointerToSchedule));
     }
     void SylibDaemon::removeSubTaskByID(int idToKill){
         mutex_lock _lock(mutex);
-        livingSubTasks.erase(std::remove_if(livingSubTasks.begin(), livingSubTasks.end(), [&](sylib::UpdatingObject * x){return (x->getSubTaskID() == idToKill);}));
+        livingSubTasks.erase(std::remove_if(livingSubTasks.begin(), livingSubTasks.end(), [&](sylib::Device  * x){return (x->getSubTaskID() == idToKill);}));
     }
     int SylibDaemon::managerTaskFunction(){
-	    printf("started sylib daemon %d\n", sylib::millis());
-        uint32_t systemTime;
-        uint64_t prevMicros = sylib::micros();
-        sylib::delay(10);
-        while((sylib::micros() - prevMicros) < 1000){
-            systemTime = sylib::millis();
-            sylib::delay_until(&systemTime, 1);
-        }
+	    printf("\nstarted sylib daemon %d\n", sylib::millis());
+        
+        /*
+        
+        THIS SECTION TAKES CARE OF DESYNCING SYLIB DAEMON WITH VEX BACKGROUND PROCESSING
+        
+        */
+
+        // A 1ms loop will actually take around 1040 or 960 microseconds, always alternating. 
+        // Over 3ms, the total length of time in micros should be either around 3040 or 960
+        // Daemon needs to start on a cycle to be directly opposite of vexBackgroundProcessing()
+        // vexBackgroundProcessing always runs after a short cycle, meaning the sylib daemon needs to start after a long cycle
+        // Values offset by 20 to give room for error, the groupings are very tight so it shouldnt matter
+        
+        constexpr std::uint64_t SHORT_MICROS_CYCLE_LENGTH = 960 + 20;
+        constexpr std::uint64_t LONG_MICROS_CYCLE_LENGTH = 1040 - 20;
+        constexpr std::uint64_t AVERAGE_MICROS_CYCLE_LENGTH = 1000;
+        constexpr std::uint64_t DIFFERENCE_BETWEEN_AVERAGE_AND_LONG = LONG_MICROS_CYCLE_LENGTH - AVERAGE_MICROS_CYCLE_LENGTH;
+
+        uint32_t systemTime = sylib::millis();
+        uint32_t detectorPreviousTime = sylib::millis();
+        uint64_t systemTimeMicros = sylib::micros();
+        uint64_t prevMicros = systemTimeMicros;
+
+        do{
+            systemTimeMicros = sylib::micros();
+            detectorPreviousTime = systemTime;
+            prevMicros = systemTimeMicros;
+            sylib::delay_until(&systemTime, 3);
+        }while((sylib::micros() - prevMicros) > (((systemTime-detectorPreviousTime)*AVERAGE_MICROS_CYCLE_LENGTH) - DIFFERENCE_BETWEEN_AVERAGE_AND_LONG));
+
+        /*
+        
+        NOW WE'RE TIMED CORRECTLY, STARTING DAEMON
+        
+        */
+
         while(1){
-            systemTime = sylib::millis();
-            printf("%dms - sylib daemon updated\n", sylib::millis());
             {
                 mutex_lock _lock{mutex};
                 frameCount++;
                 for(auto & subTask : livingSubTasks){
                     if(!subTask->getSubTaskPaused() && ((frameCount + subTask->getUpdateOffset()) % subTask->getUpdateFrequency() == 0)){
-                        printf("%dms - subtask updater called\n", sylib::millis());
                         subTask->update();
                     }
                 }
-            }
-            sylib::delay_until(&systemTime, 2- systemTime % 2);
+            } 
+            sylib::delay_until(&systemTime, 2);
         }
         return 1;
     }
-    uint64_t SylibDaemon::frameCount = 0;
+    int SylibDaemon::frameCount = 0;
     sylib::Mutex SylibDaemon::mutex = sylib::Mutex();
-    SylibDaemon SylibDaemon::instance = SylibDaemon();
-    std::vector<sylib::UpdatingObject *> SylibDaemon::livingSubTasks = std::vector<sylib::UpdatingObject *>();
+    std::vector<sylib::Device  *> SylibDaemon::livingSubTasks = std::vector<sylib::Device  *>();
     int SylibDaemon::subTasksCreated = 0;
-    SylibDaemon& UpdatingObject::taskMgr = SylibDaemon::getInstance();
 
-
-    void UpdatingObject::startSubTask(){
+    void Device::startSubTask(){
         mutex_lock _lock{mutex};
+        static SylibDaemon& taskMgr = SylibDaemon::getInstance();
         subTaskID = taskMgr.createSubTask(this);
     }
-    void UpdatingObject::killSubTask(){
+    void Device::killSubTask(){
         mutex_lock _lock{mutex};
+        static SylibDaemon& taskMgr = SylibDaemon::getInstance();
         taskMgr.removeSubTask(this);
     }
-    UpdatingObject::UpdatingObject(int interval, int offset){
+    Device::Device (int interval, int offset) : updateFrequency(interval), updateOffset(offset){
         startSubTask();
     }
-    UpdatingObject::~UpdatingObject(){
+    Device::~Device (){
         mutex.lock();
         killSubTask();
     }
-    int UpdatingObject::getSubTaskID(){mutex_lock _lock(mutex);return subTaskID;}
-    bool UpdatingObject::getSubTaskPaused(){mutex_lock _lock(mutex); return subTaskPaused;}
-    int UpdatingObject::getUpdateFrequency(){mutex_lock _lock(mutex); return updateFrequency;}
-    int UpdatingObject::getUpdateOffset(){mutex_lock _lock(mutex); return updateOffset;}
-    void UpdatingObject::update(){
-        std::cout << "Sylib subtask " << subTaskID << "updated at " << sylib::millis() << "ms" << std::endl;
+    int Device::getSubTaskID(){mutex_lock _lock(mutex);return subTaskID;}
+    bool Device::getSubTaskPaused(){mutex_lock _lock(mutex); return subTaskPaused;}
+    int Device::getUpdateFrequency(){mutex_lock _lock(mutex); return updateFrequency;}
+    int Device::getUpdateOffset(){mutex_lock _lock(mutex); return updateOffset;}
+    void Device::update(){
+        printf("%dms - sylib subtask %d updated\n", sylib::millis(), subTaskID);
     }
 }

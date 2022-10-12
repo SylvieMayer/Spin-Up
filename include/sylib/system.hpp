@@ -1,6 +1,7 @@
 #pragma once
 
 #include "env.hpp"
+#include "system.hpp"
 #include <mutex>
 #include <stdint.h>
 
@@ -10,6 +11,7 @@ namespace sylib {
     typedef pros::Mutex PlatformMutex;
     typedef pros::Task PlatformTask;
     #elif defined(SYLIB_ENV_VEXCODE)
+    #define V5_MAX_DEVICE_PORTS 32
     typedef vex::mutex PlatformMutex;
     typedef vex::task PlatformTask;
     #endif
@@ -31,43 +33,41 @@ namespace sylib {
             template <class F>
             Task(F&& func) : PlatformTask(func) {}
     };
-    
+    extern Mutex sylib_port_mutexes[V5_MAX_DEVICE_PORTS]; 
     using mutex_lock = const std::lock_guard<sylib::Mutex>;
-    class UpdatingObject;
+    class Device ;
     class SylibDaemon{
         private:
             SylibDaemon();
 	        ~SylibDaemon();
 	        SylibDaemon(const SylibDaemon&);
 	        const SylibDaemon& operator=(const SylibDaemon&);
-            static SylibDaemon instance;
             sylib::Task managerTask; // Change to something else if vexcode
             static int subTasksCreated;
-            static std::vector<sylib::UpdatingObject *> livingSubTasks;
-            static uint64_t frameCount;
+            static std::vector<sylib::Device  *> livingSubTasks;
+            static int frameCount;
         public:
             static sylib::Mutex mutex;
             static SylibDaemon& getInstance();
             static int managerTaskFunction();
-            static int createSubTask(sylib::UpdatingObject * objectPointerToSchedule);
-            static void removeSubTask(sylib::UpdatingObject * objectPointerToSchedule);
+            static int createSubTask(sylib::Device  * objectPointerToSchedule);
+            static void removeSubTask(sylib::Device  * objectPointerToSchedule);
             static void removeSubTaskByID(int idToKill);
             static uint64_t getFrameCount();
     };
 
-    class UpdatingObject {
+    class Device  {
         private:
             bool subTaskPaused = false;
-            int updateFrequency = 2;
-            int updateOffset = 0;
+            int updateFrequency;
+            int updateOffset;
             int subTaskID;
             void startSubTask();
             bool idSet = false;
         public:
-            static SylibDaemon& taskMgr;
             sylib::Mutex mutex;
-            UpdatingObject(int interval = 2, int offset = 0);
-            ~UpdatingObject();
+            Device (int interval = 2, int offset = 0);
+            ~Device ();
             void resumeSubTask();
             void pauseSubTask();
             void killSubTask();

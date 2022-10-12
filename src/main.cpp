@@ -2,7 +2,6 @@
 #include "config.h"
 #include "pros/adi.hpp"
 #include "pros/rtos.hpp"
-#include "sylib/system.hpp"
 #include <cstdint>
 /*
 	IMPORTANT
@@ -91,28 +90,35 @@ void autonomous() {}
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
-void opcontrol() 
-{
-	// std::cout << "started \n";
-	// pros::ADILed addrled(3, 16);
-	// std::cout << "created \n";
-	// pros::delay(1000);
-	// addrled.set_all(0xFF0000);
-	// std::cout << "set \n";
-	// addrled.update();
-	// std::cout << "updated \n";
-	// std::cout << "creating obj" << std::endl;
-	printf("creating obj %d\n", sylib::millis());
-	sylib::UpdatingObject testUpdater = sylib::UpdatingObject(2,0);
-	printf("created obj %d\n", sylib::millis());
-	while (true) 
-	{
-		std::uint32_t now = pros::millis();
-		printf("created main task loop %d\n", sylib::millis());
 
-		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
-		// flywheelCont();
-		// intakeCont();
-		pros::Task::delay_until(&now,10);
+void opcontrol() {
+	uint32_t mainTime = sylib::millis();
+	printf("main started %d\n", mainTime);
+	printf("creating obj %d\n", sylib::millis());
+	sylib::Motor testingMotor(17, 3600, false);
+	printf("created obj %d\n", sylib::millis());
+	while (true){
+		if (sylib::millis() <= 15000) {
+        	testingMotor.move_voltage(6000 +(sin(sylib::millis()*6.14/5000)) * 2000);
+		}
+		else if(sylib::millis() <= 25000){
+        	testingMotor.move_voltage(9000);
+		}
+		else if(sylib::millis() <= 35000){
+            testingMotor.move_voltage(4000 +(sin(sylib::millis()*6.14/2500)) * 3000);
+		}
+		else{
+        	testingMotor.move_voltage(0);   
+		}
+
+		printf("%d|%f|%f|%f|%f\n", sylib::millis(), testingMotor.get_actual_velocity(), testingMotor.get_vexos_velocity(), testingMotor.get_sma_velocity(), testingMotor.get_acceleration());
+		sylib::delay_until(&mainTime,10);
 	}
 }
+		// printf("created main task loop\n");
+
+		// drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+		// flywheelCont();
+		// intakeCont();
+		// printf("%d\n", now);
+		// printf("%d\n", pros::millis()-now);
