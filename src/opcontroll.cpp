@@ -2,6 +2,9 @@
 #include "main.h"
 #include "pros/misc.h"
 #include "pros/rtos.hpp"
+#include <array>
+#include <cstddef>
+#include <iostream>
 #include <string>
 #include <queue>
 /*
@@ -12,12 +15,6 @@ double real_left = 0;
 double real_right = 0;
 double deadzone = 5;
 int flywheelRPMTarget = 0;
-int oldFlywheelRPMTarget = 0;
-extern "C" int32_t vexDeviceGetTimestampByIndex(int32_t index);
-extern "C" uint32_t vexSystemTimeGet(void);
-extern "C" uint64_t vexSystemHighResTimeGet(void);
-extern "C" void vPortExitCritical();
-extern "C" void vPortEnterCritical();
 
 
 void drive(double left, double right){
@@ -38,42 +35,22 @@ void drive(double left, double right){
       rightDrive.move_velocity(0);
     }
 }
-double currentTicks;
-double speedDifference;
-double power;
-double ema = 0;
-double kA = 0.15;
-double kA2 = 0.03;
-double kV = 3.35;
-std::uint32_t currentTime = 0;
-double oldTicks = 0;
-double dP;
+std::uint32_t oldTime = 0;
 double realVelocity;
-double kT = 50;
-double internalVelocityMeasure;
 double kP = 5;
-double kI = 0.02;
-double kD = 200;
-double integral = 0;
+double kI = 0.005;
+double dT = 0;
 double error;
-double oldError = 0;
-double derivative;
-double ema_error;
-double flywheelCurrentLimit = 2500;
-double actualCurrent = 0;
-const int dT = 1;
-const int queueMaxSize = 10;
-double velTotal = 0;
-std::queue<double> velQueue;
-double sma_velocity = 0;
-double raw_ema = 0;
-int32_t flywheelMotorTimestamp = 0;
-int32_t prev_flywheelMotorTimestamp = 0;
-int32_t timestampDiff = 0;
-int32_t oldDiff = 0;
-double rawTicks = 0;
-double rawTicksMotorTime = 0;
-uint32_t systemTime = 0;
+double flywheelCurrentLimit;
+double power;
+double sma;
+double ema;
+double median;
+double raw;
+double kV = 3.45;
+double rawPWMValue;
+
+// sylib::SylviesPogVelocityEstimator flywheelVelocity(&flywheel, 3600);
 
 double actualCurrentLimit(double temperature){
     double currentLimit;
@@ -96,62 +73,7 @@ double actualCurrentLimit(double temperature){
 }
 
 void flywheel_speed_set(){
-    vPortEnterCritical();
-    currentTime = pros::millis();
-    currentTicks = flywheel.get_position();
-    flywheelMotorTimestamp = vexDeviceGetTimestampByIndex(16);
-    systemTime = vexSystemTimeGet();
-    // rawTicksMotorTime = flywheel.get_raw_position(&systemTime);
-    // rawTicks = flywheel.get_raw_position(&currentTime);
-    vPortExitCritical();
-    timestampDiff = flywheelMotorTimestamp- prev_flywheelMotorTimestamp;
-    prev_flywheelMotorTimestamp = flywheelMotorTimestamp;
-    internalVelocityMeasure = flywheel.get_actual_velocity();
-    dP = currentTicks - oldTicks;
-    oldTicks = currentTicks;
-    realVelocity = (dP/kT)/dT * 60000;
-    velTotal += realVelocity;
-    if(velQueue.size() >= queueMaxSize){
-        velTotal -= velQueue.front();
-        velQueue.pop();
-    }
-    velQueue.push(realVelocity);
-    sma_velocity = velTotal/velQueue.size();
-    ema = sma_velocity*kA + ema*(1-kA);
-    raw_ema = realVelocity*kA + raw_ema*(1-kA);
-    error = flywheelRPMTarget - sma_velocity;
-    if (flywheelRPMTarget != oldFlywheelRPMTarget){
-        integral = 0;
-    }
-    oldFlywheelRPMTarget = flywheelRPMTarget;
-    integral = integral + error*dT;
-    ema_error = std::abs(error)*kA2 + ema_error*(1-kA2);
-    derivative = (error-oldError)/dT;
-    oldError = error;
-    flywheelCurrentLimit = actualCurrentLimit(flywheel.get_temperature());
-    actualCurrent = flywheel.get_current_draw();
-    power = kP * error + kI * integral;
-    if(power < 0){
-        power = 0;
-    }
-    if(power > 12000){
-        power = 12000;
-    }
-    pros::lcd::set_text(0, std::to_string(ema));
-    pros::lcd::set_text(1, std::to_string(flywheelRPMTarget));
 
-    pros::lcd::set_text(2, std::to_string(power));
-    pros::lcd::set_text(3, std::to_string(ema_error));
-    pros::lcd::set_text(4, std::to_string(integral));
-    pros::lcd::set_text(5, std::to_string(flywheelCurrentLimit));
-    pros::lcd::set_text(6, std::to_string(flywheel.get_temperature()));
-    pros::lcd::set_text(7, std::to_string(std::abs(error)));
-    int32_t diffTime = (currentTime-flywheelMotorTimestamp);
-    int32_t diffyDiff = diffTime - oldDiff;
-    oldDiff = diffTime;//                                                0           1            2   3         4                 5     6             7            8                          9       10 11                     12            13       14        15           16                 17       18         
-    printf("%d|%f|%f|%f|%d|%f|%f|%f|%f|%f|%f|%d|%d|%d|%d|%f|%d|%f|%f \n",currentTime,sma_velocity,ema,ema_error,flywheelRPMTarget,error,actualCurrent,realVelocity,internalVelocityMeasure*18,raw_ema,dP,flywheelMotorTimestamp,timestampDiff,diffTime,diffyDiff,currentTicks,vexSystemTimeGet()); 
-    // printf("%d|%d|%d \n",currentTime,flywheelMotorTimestamp,vexSystemTimeGet());
-    flywheel.move_voltage(power);
 }
 
 void flywheelCont()
@@ -186,8 +108,7 @@ void flywheelCont()
             flywheelRPMTarget = flywheelRPMTarget - 50;
         }
     }
-    master.print(0, 0, "%d", flywheelRPMTarget);
-    flywheel_speed_set();
+    flywheel.set_velocity_target(flywheelRPMTarget);
 }
 
 void intakeCont()

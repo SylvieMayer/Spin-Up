@@ -1,5 +1,6 @@
 #include "main.h"
 #include "config.h"
+#include "pros/adi.hpp"
 #include "pros/rtos.hpp"
 #include <cstdint>
 /*
@@ -89,15 +90,16 @@ void autonomous() {}
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
-void opcontrol() 
-{
-	while (true) 
-	{
-		std::uint32_t now = pros::millis();
+
+void opcontrol() {
+	uint32_t mainTime = sylib::millis();
+	while (true){
 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
 		flywheelCont();
 		intakeCont();
-		// pros::Task::delay_until(&now,10);
-		pros::delay(1);
+		// printf("%d|%f|%f|%f|%f\n", sylib::millis(), testingMotor.get_velocity(), testingMotor.get_velocity_motor_reported(), testingMotor.get_velocity_sma_filter_only(), testingMotor.get_acceleration());
+		sylib::delay_until(&mainTime,10);
 	}
 }
+		// printf("created main task loop\n");
+

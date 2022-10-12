@@ -18,7 +18,7 @@ pros::Controller master(pros::E_CONTROLLER_MASTER);
 */ 
 
 
-pros::Motor flywheel(17, true);
+sylib::Motor flywheel(17, 3600,true);
 pros::Motor intake(14);
 
 pros::Motor leftDrive1(11, false);
