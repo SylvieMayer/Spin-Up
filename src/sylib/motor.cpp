@@ -1,5 +1,6 @@
 #include "sylib/motor.hpp"
 #include "sylib/env.hpp"
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <stdint.h>
@@ -75,17 +76,29 @@ namespace sylib {
 
 
 
-    Motor::Motor(const uint8_t smart_port, const double gearing, const bool reverse) : 
+    Motor::Motor(const uint8_t smart_port, const double gearing, const bool reverse, const SpeedControllerInfo speedController) : 
         Device(5,0), smart_port(smart_port), gearing(gearing), reversed(reverse), device(vexDeviceGetByIndex(smart_port-1)),
-        motorVoltageEstimator{3.45},
-        motorPController{0,std::shared_ptr<double>(&velocity_error),gearing},
-        motorIController{0.005,std::shared_ptr<double>(&velocity_error),gearing},
-        motorDController{0,std::shared_ptr<double>(&velocity_error),gearing}{
-        mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
+        motorVoltageEstimator{speedController.kV, gearing},
+        motorPController{speedController.kP,std::shared_ptr<double>(&velocity_error),gearing, true, speedController.kP2, speedController.pRange},
+        motorIController{speedController.kI,std::shared_ptr<double>(&velocity_error),gearing, true, speedController.antiWindupRange},
+        motorDController{speedController.kD,std::shared_ptr<double>(&velocity_error),gearing},
+        motorTBHController{speedController.kH, std::shared_ptr<double>(&velocity_error)},
+        speedController(speedController){
+        std::unique_lock<sylib::Mutex> _lock;
+        if (sylib::millis() > 1) {
+            _lock = std::unique_lock<sylib::Mutex>(sylib_port_mutexes[smart_port-1]);
+        }
         motorVelocityTracker = sylib::SylviesPogVelocityEstimator(gearing);
         vexDeviceMotorGearingSet(device, kMotorGearSet_18);
+
     }
     void Motor::set_motor_controller(){
+        static SylibMotorControlMode previousMode;
+        static sylib::EMAFilter velocityPIDFilter = sylib::EMAFilter();
+        if(sylib_control_mode != previousMode){
+            motorIController.resetValue();
+        }
+        previousMode = sylib_control_mode;
         if(sylib_control_mode == SylibMotorControlModeOFF){
             vexDeviceMotorBrakeModeSet(device, kV5MotorBrakeModeCoast);
             vexDeviceMotorVelocitySet(device, 0);
@@ -98,11 +111,35 @@ namespace sylib {
             vexDeviceMotorBrakeModeSet(device, kV5MotorBrakeModeHold);
             vexDeviceMotorVelocitySet(device, 0);
         }
-        else if(sylib_control_mode == SylibMotorControlModeVELOCITY){
-            voltage_target = motorVoltageEstimator.estimate(velocity_target) +
-                             *motorPController +
-                             *motorIController +
-                             *motorDController;
+        else if(sylib_control_mode == SylibMotorControlModeCUSTOM){
+            if(velocity_target > 0 && velocity_error > speedController.maxVoltageRange*gearing/3600){
+                voltage_target = 12000;
+            }
+            else if(velocity_target < 0 && velocity_error < -speedController.maxVoltageRange*gearing/3600){
+                voltage_target = -12000;
+            }
+            else{
+                if(std::abs(velocity_error) > 50){
+                    motorPController.setkP(10);
+                    motorIController.setkI(0);
+                }
+                else{
+                    motorPController.setkP(0);
+                    motorIController.setkI(0.002);
+                }
+                voltage_target = motorVoltageEstimator.estimate(velocity_target) +
+                                *motorPController +
+                                *motorIController +
+                                *motorDController +
+                                *motorTBHController;
+            }
+           
+            if(velocity_target*voltage_target <= 0){         
+                voltage_target = 0; // Doesn't apply negative power in velocity control mode, ever.
+            }
+            if(std::abs(voltage_target)>12000){
+                voltage_target = 12000;
+            }
             vexDeviceMotorVoltageSet(device, voltage_target);
         }
         else if(sylib_control_mode == SylibMotorControlModePOSITION){
@@ -119,7 +156,6 @@ namespace sylib {
         }
     }
     void Motor::update(){
-        printf("%dms - sylib subtask %d updated\n", sylib::millis(), getSubTaskID());
         mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
         position = vexDeviceMotorPositionRawGet(device, &internalClock);
         velocity = motorVelocityTracker.getVelocity(position, internalClock);
@@ -127,6 +163,7 @@ namespace sylib {
         motorPController.update();
         motorIController.update();
         motorDController.update();
+        motorTBHController.update();
         raw_velocity = motorVelocityTracker.getRawVelocity();
         vexos_velocity = vexDeviceMotorActualVelocityGet(device);
         sma_velocity = motorVelocityTracker.getSmaFilteredVelocity();
@@ -153,19 +190,21 @@ namespace sylib {
     void Motor::set_position_target_absolute(double new_position, std::int32_t velocity_cap){
         mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
         position_target = new_position;
-        velocity_target = velocity_cap*gearing/3600;
-        sylib_control_mode = SylibMotorControlModePOSITION;
+        velocity_target = velocity_cap*200/gearing;
+        sylib_control_mode = SylibMotorControlModePositionAUTO;
     }
     void Motor::set_position_target_relative(double new_position, std::int32_t velocity_cap){
         mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
-        position_target = position + new_position;
-        velocity_target = velocity_cap*gearing/3600;
-        sylib_control_mode = SylibMotorControlModePOSITION;
+        if(new_position != position_target){
+            position_target = position + new_position;
+        }
+        velocity_target = velocity_cap*200/gearing;
+        sylib_control_mode = SylibMotorControlModePositionAUTO;
     }
-    void Motor::set_velocity_target(std::int16_t new_velocity_target){
+    void Motor::set_velocity_custom_controller(std::int16_t new_velocity_target){
         mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
         velocity_target = new_velocity_target;
-        sylib_control_mode = SylibMotorControlModeVELOCITY;
+        sylib_control_mode = SylibMotorControlModeCUSTOM;
     }
     void Motor::stop(){
         mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
@@ -207,24 +246,26 @@ namespace sylib {
         vexDeviceMotorPositionReset(device);
         position = 0;
     }
-    void Motor::set_velocity_internal_pid(std::int32_t new_velocity_target){
+    void Motor::set_velocity(std::int32_t new_velocity_target){
         mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
         velocity_target = new_velocity_target*200/gearing;
         sylib_control_mode = SylibMotorControlModeVelocityAUTO;
     }
-    void Motor::set_position_absolute_internal_pid(double new_position, std::int32_t velocity_cap){
-        mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
-        position_target = new_position;
-        velocity_target = velocity_cap*200/gearing;
-        sylib_control_mode = SylibMotorControlModePositionAUTO;
+    void Motor::updateSpeedController(sylib::SpeedControllerInfo controller){
+        motorVoltageEstimator.setkV(controller.kV);
+        motorPController.setkP(controller.kP);
+        motorIController.setkI(controller.kI);
+        motorDController.setkD(controller.kD);
+        motorPController.setkP2(controller.kP2);
+        motorPController.setMaxRangeEnabled(controller.pRange);
+        motorPController.setMaxRange(controller.pRange);
+        motorIController.setAntiWindupEnabled(controller.antiWindupEnabled);
+        motorIController.setAntiWindupRange(controller.antiWindupRange);
     }
-    void Motor::set_position_relative_internal_pid(double new_position, std::int32_t velocity_cap){
-        mutex_lock _lock(sylib_port_mutexes[smart_port-1]);
-        position_target = position + new_position;
-        velocity_target = velocity_cap*200/gearing;
-        sylib_control_mode = SylibMotorControlModePositionAUTO;
-    }
-
+    double Motor::get_velocity_error() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return velocity_error;}
+    std::int32_t Motor::get_p_voltage() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return motorPController.getOutput();}
+    std::int32_t Motor::get_i_voltage() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return motorIController.getOutput();}
+    std::int32_t Motor::get_d_voltage() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return motorDController.getOutput();}
     double Motor::get_velocity() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return velocity;}
     double Motor::get_velocity_motor_reported() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return vexos_velocity*gearing/200;}
     double Motor::get_velocity_sma_filter_only() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return sma_velocity;}
@@ -238,7 +279,7 @@ namespace sylib {
     double Motor::get_watts() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return power;}
     std::int32_t Motor::get_amps() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return current_draw;}
     std::int32_t Motor::get_amps_limit() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return current_limit;}
-    std::int32_t Motor::get_applied_voltage() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return voltage;}
+    std::int32_t Motor::get_applied_voltage() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return voltage_target;}
     std::int32_t Motor::get_volts_limit() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return voltage_limit;}
     std::int32_t Motor::get_efficiency() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return efficiency;}
     std::int32_t Motor::get_faults() const{mutex_lock _lock(sylib_port_mutexes[smart_port-1]);return faults;}

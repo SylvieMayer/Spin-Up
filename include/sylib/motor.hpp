@@ -62,7 +62,7 @@ namespace sylib {
             double getCalculatedkA() const;
             double getMaxFilteredAcceleration() const;
     };
-    class Motor : public Device{
+    class Motor : private Device{
         private:
             //SDK things
             const V5_DeviceT device;
@@ -76,6 +76,8 @@ namespace sylib {
             sylib::ProportionalController motorPController;
             sylib::IntegralController motorIController;
             sylib::DerivativeController motorDController;
+            sylib::TakeBackHalfController motorTBHController;
+            sylib::SpeedControllerInfo speedController; 
 
             // Updating values
             uint32_t internalClock;
@@ -113,14 +115,14 @@ namespace sylib {
 
 
         public:
-            Motor(const uint8_t smart_port, const double gearing = 200, const bool reverse = false);
+            Motor(const uint8_t smart_port, const double gearing = 200, const bool reverse = false, const SpeedControllerInfo speedController = SpeedControllerInfo());
             // Background control stuff
-            void update();
+            void update() override;
 
             // Motor control
             void set_position_target_absolute(double new_position, std::int32_t velocity_cap = 200);
             void set_position_target_relative(double new_position, std::int32_t velocity_cap = 200);
-            void set_velocity_target(std::int16_t new_velocity_target);
+            void set_velocity_custom_controller(std::int16_t new_velocity_target);
             void stop();
             void set_voltage(std::int16_t new_voltage_target);
             void set_braking_mode(V5MotorBrakeMode mode);
@@ -128,11 +130,15 @@ namespace sylib {
             void set_is_reversed(bool reverse);
             void set_volts_limit(std::int32_t limit);
             void tare_encoder();
-            void set_velocity_internal_pid(std::int32_t new_velocity_target);
-            void set_position_absolute_internal_pid(double new_position, std::int32_t velocity_cap = 200);
-            void set_position_relative_internal_pid(double new_position, std::int32_t velocity_cap = 200);
+            void set_velocity(std::int32_t new_velocity_target);
+
+            void updateSpeedController(sylib::SpeedControllerInfo controller);
 
             // Motor telemetry
+            double get_velocity_error() const;
+            std::int32_t get_p_voltage() const;
+            std::int32_t get_i_voltage() const;
+            std::int32_t get_d_voltage() const;
             double get_position() const;
             double get_position_target() const;
             double get_velocity() const;

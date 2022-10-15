@@ -1,7 +1,8 @@
 #include "env.hpp"
 
 namespace sylib {
-class EMAFilter {
+    using kv_fn_t=std::function<double(double)>;
+    class EMAFilter {
         private:
             double inputkA;
             double ema;
@@ -74,17 +75,17 @@ class EMAFilter {
             double getCurrentDerivative() const;
             double getCurrentInputValue() const;
     };
-        class VoltageEstimation{
+    class VoltageEstimation{
         private:
-            double kV;
+            kv_fn_t kV;
             double voltageEstimate;
             double motorGearing;
         public:
-            VoltageEstimation(double kV, double motorGearing = 200);
+            VoltageEstimation(kv_fn_t kV, double motorGearing = 200);
             double estimate(double rpm);
-            double getKv() const;
+            kv_fn_t getKv() const;
             double getMotorGearing() const;
-            void setkV(double value);
+            void setkV(kv_fn_t value);
     };
 
     class ProportionalController{
@@ -93,13 +94,19 @@ class EMAFilter {
             double kP;
             double motorGearing;
             double proportional;
+            bool maxRangeEnabled;
+            double kP2;
+            double maxRange;
         public:
-            ProportionalController(double kP, std::shared_ptr<double> error, double motorGearing = 200);
+            ProportionalController(double kP, std::shared_ptr<double> error, double motorGearing = 200, bool maxRangeEnabled = false, double kP2 = 0, double maxRange = 0);
             double update();
             double getkP() const;
             double getOutput() const;
             void setkP(double gain);
             double operator*();
+            void setMaxRangeEnabled(bool enabled);
+            void setMaxRange(double range);
+            void setkP2(double gain);
     };
 
     class IntegralController{
@@ -111,15 +118,20 @@ class EMAFilter {
             uint32_t currentTime;
             uint32_t previousTime;
             uint32_t dT;
+            bool antiWindupEnabled;
+            double antiWindupRange;
         public:
-            IntegralController(double kI, std::shared_ptr<double> error, double motorGearing = 200);
+            IntegralController(double kI, std::shared_ptr<double> error, double motorGearing = 200, bool antiWindupEnabled = false, double antiWindupRange = 0);
             double update();
             double getkI() const;
+            void resetValue();
             double getOutput() const;
             double getCurrentTime() const;
             uint32_t getdT() const;
             void setkI(double gain);
             double operator*();
+            void setAntiWindupEnabled(bool enabled);
+            void setAntiWindupRange(double range);
     };
 
     class DerivativeController{
@@ -143,4 +155,45 @@ class EMAFilter {
             void setkD(double gain);
             double operator*();
     };
+
+    class TakeBackHalfController{
+        private:
+            std::shared_ptr<double> error;
+            double kH;
+            double output;
+            double tbh;
+            double previousError;
+            uint32_t currentTime;
+            uint32_t previousTime;
+            uint32_t dT;
+        public:
+            TakeBackHalfController(double kH, std::shared_ptr<double> error);
+            double update();
+            double getOutput() const;
+            double getkH() const;
+            double getTBH() const;
+            void setkH(double gain);
+            double getCurrentTime() const;
+            double operator*() const;
+    };
+    
+    struct SpeedControllerInfo {
+        kv_fn_t kV = [](double rpm){return 0;};
+        double kP = 0;
+        double kI = 0;
+        double kD = 0;
+        double kH = 0;
+
+        bool antiWindupEnabled = true;
+        double antiWindupRange = 50;
+        bool pRangeEnabled = false;
+        double pRange = 50;
+        double kP2 = 0;
+
+        double maxVoltageRange = 0;
+
+        SpeedControllerInfo(kv_fn_t kV = [](double rpm){return 0;}, double kP = 0, double kI = 0, double kD = 0, double kH = 0, bool antiWindupEnabled = true, double antiWindupRange = 0, bool pRangeEnabled = false, double pRange = 0, double kP2 = 0, double maxVoltageRange = 0) :
+                        kV(kV), kP(kP), kI(kI), kD(kD), kH(kH), antiWindupEnabled(antiWindupEnabled), antiWindupRange(antiWindupRange), pRangeEnabled(pRangeEnabled), pRange(pRange), kP2(kP2), maxVoltageRange(maxVoltageRange){}
+    };
+    
 }

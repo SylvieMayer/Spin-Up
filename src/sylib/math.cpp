@@ -1,4 +1,5 @@
 #include "sylib/math.hpp"
+#include "env.hpp"
 
 namespace sylib{
     EMAFilter::EMAFilter(){
@@ -151,50 +152,71 @@ namespace sylib{
     double SympleDerivativeSolver::getCurrentDerivative() const{return derivativeFunctionValue;}
     double SympleDerivativeSolver::getCurrentInputValue() const{return currentInputFunctionValue;}
 
-    VoltageEstimation::VoltageEstimation(double kV, double motorGearing) : motorGearing(motorGearing), kV(kV){
+    VoltageEstimation::VoltageEstimation(kv_fn_t kV, double motorGearing) : motorGearing(motorGearing), kV(kV){
         voltageEstimate = 0;
     }
     double VoltageEstimation::estimate(double rpm){
-        voltageEstimate = rpm * kV * 3600 / motorGearing;
+        voltageEstimate = rpm * kV(rpm);
         return voltageEstimate;
     }
-    double VoltageEstimation::getKv() const{return kV;}
+    kv_fn_t VoltageEstimation::getKv() const{return kV;}
     double VoltageEstimation::getMotorGearing() const{return motorGearing;}
-    void VoltageEstimation::setkV(double value){kV = value;}
+    void VoltageEstimation::setkV(kv_fn_t value){kV = value;}
 
-    ProportionalController::ProportionalController(double kP, std::shared_ptr<double> error, double motorGearing): kP(kP), motorGearing(motorGearing), error(error){
+    ProportionalController::ProportionalController(double kP, std::shared_ptr<double> error, double motorGearing, bool maxRangeEnabled, double kP2, double maxRange): 
+                                                   kP(kP), motorGearing(motorGearing), error(error), maxRange(maxRange), maxRangeEnabled(maxRangeEnabled), kP2(kP2){
         proportional = 0;
     }
     double ProportionalController::update(){
-        proportional = *error * kP * motorGearing / 3600;
+        if(maxRangeEnabled){
+            if(std::abs(*error) < maxRange){
+                proportional = *error * kP2 * 3600 / motorGearing;
+                return proportional;
+            }
+        }
+        proportional = *error * kP * 3600 / motorGearing;
         return proportional;
     }
     double ProportionalController::getkP() const{return kP;}
     double ProportionalController::getOutput() const{return proportional;}
     void ProportionalController::setkP(double gain){kP = gain;}
     double ProportionalController::operator*(){return getOutput();}
+    void ProportionalController::setMaxRangeEnabled(bool enabled){maxRangeEnabled = enabled;}
+    void ProportionalController::setMaxRange(double range){maxRange = range;}
+    void ProportionalController::setkP2(double gain){kP2 = gain;}
 
-    IntegralController::IntegralController(double kI, std::shared_ptr<double> error, double motorGearing) : kI(kI), motorGearing(motorGearing), error(error){
+    IntegralController::IntegralController(double kI, std::shared_ptr<double> error, double motorGearing, bool antiWindupEnabled, double antiWindupRange) : 
+                                           kI(kI), motorGearing(motorGearing), error(error), antiWindupEnabled(antiWindupEnabled), antiWindupRange(antiWindupRange){
         integral = 0;
         currentTime = vexSystemTimeGet();
         previousTime = currentTime;
         dT = 0;
     }
     double IntegralController::update(){
+        static sylib::EMAFilter iControllerFilter = sylib::EMAFilter();
         currentTime = vexSystemTimeGet();
         dT = currentTime - previousTime;
+        previousTime = currentTime;
         if (dT <= 0) {
-            return integral;
+            return integral*kI;
         }
-        integral += *error * dT * motorGearing / 3600;
-        return integral;
+        if(antiWindupEnabled){
+            if(std::abs(*error) > antiWindupRange){
+                return integral*kI;
+            }
+        }
+        integral += (*error * dT) * 3600 / motorGearing;
+        return integral*kI;
     }
-    double IntegralController::getOutput() const{return integral;}
+    double IntegralController::getOutput() const{return integral*kI;}
     double IntegralController::getkI() const{return kI;}
     double IntegralController::getCurrentTime() const{return currentTime;}
     uint32_t IntegralController::getdT() const{return dT;}
     void IntegralController::setkI(double gain){kI = gain;}
     double IntegralController::operator*(){return getOutput();}
+    void IntegralController::resetValue(){integral=0;}
+    void IntegralController::setAntiWindupEnabled(bool enabled){antiWindupEnabled = enabled;}
+    void IntegralController::setAntiWindupRange(double range){antiWindupRange = range;}
 
     DerivativeController::DerivativeController(double kD, std::shared_ptr<double> error,  double motorGearing) : kD(kD), motorGearing(motorGearing), error(error){
         derivative = 0;
@@ -206,6 +228,7 @@ namespace sylib{
         dT = 0;
     }
     double DerivativeController::update(){
+        static sylib::EMAFilter dControllerFilter = sylib::EMAFilter();
         currentTime = vexSystemTimeGet();
         currentInput = *error;
         dT = currentTime - previousTime;
@@ -213,14 +236,43 @@ namespace sylib{
         if(dT <= 0){
             return derivative;
         }
-        derivative = (currentInput-previousInput) / dT * motorGearing / 3600;
+
+        derivative = (currentInput-previousInput) / dT * 3600 / motorGearing;
+
         previousInput = currentInput;
-        return derivative;
+        return derivative*kD;
     }
-    double DerivativeController::getOutput() const{return derivative;}
+    double DerivativeController::getOutput() const{return derivative*kD;}
     double DerivativeController::getCurrentTime() const{return currentTime;}
     double DerivativeController::getkD() const{return kD;}
     uint32_t DerivativeController::getdT() const{return dT;}
     void DerivativeController::setkD(double gain){kD = gain;}
     double DerivativeController::operator*(){return getOutput();}
+
+    TakeBackHalfController::TakeBackHalfController(double kH, std::shared_ptr<double> error) : error(error), kH(kH){
+        output = 0;
+        previousError = 0;
+        tbh = 0;
+        currentTime = vexSystemTimeGet();
+    }
+    double TakeBackHalfController::update(){
+        currentTime = vexSystemTimeGet();
+        if(std::abs(*error) < 200){
+            output += *error * kH;
+            if(*error * previousError <= 0){
+                output = 0.5 * (output + tbh);
+                tbh = output;
+            }
+            previousError = *error;
+            return output;
+        }
+        else{
+            return 0;
+        }
+    }
+    double TakeBackHalfController::getOutput() const{return output;}
+    double TakeBackHalfController::getkH() const{return kH;}
+    double TakeBackHalfController::getTBH() const{return tbh;}
+    double TakeBackHalfController::operator*() const{return getOutput();}
+    void TakeBackHalfController::setkH(double gain){kH = gain;}
 }

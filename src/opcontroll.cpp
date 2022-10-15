@@ -79,28 +79,7 @@ void flywheel_speed_set(){
 void flywheelCont()
 {
     //update button placement later
-    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
-        flywheelRPMTarget = 5000;
-    }
-    else{
-        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A))
-        {
-            flywheelRPMTarget = 0;
-        }
-        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
-        {
-            flywheelRPMTarget = 2700;
-        }
-        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
-        {
-            flywheelRPMTarget = 3150;
-        }
-        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
-        {
-            flywheelRPMTarget = 3600;
-        }
-    }
-    flywheel.set_velocity_target(flywheelRPMTarget);
+
 }
 
 void intakeCont()

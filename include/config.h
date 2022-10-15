@@ -12,6 +12,7 @@ extern pros::Motor rightDrive1;
 extern pros::Motor rightDrive2;
 extern pros::Motor rightDrive3;
 extern sylib::Motor flywheel;
+extern sylib::Addrled led1;
 extern pros::Motor intake;
 
 extern pros::Motor_Group leftDrive;
