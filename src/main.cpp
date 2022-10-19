@@ -134,8 +134,8 @@ void chassis_light_control(){
 					     actualCurrentLimit(rightDrive2.get_temperature()) + 
 						 actualCurrentLimit(rightDrive3.get_temperature()))/3;
 
-	leftSpeed = (leftDrive.get_actual_velocities()[0] + leftDrive.get_actual_velocities()[1]+leftDrive.get_actual_velocities()[2])/3;
-	rightSpeed = (rightDrive.get_actual_velocities()[0] + rightDrive.get_actual_velocities()[1]+rightDrive.get_actual_velocities()[2])/3;
+	leftSpeed = std::abs((leftDrive.get_actual_velocities()[0] + leftDrive.get_actual_velocities()[1]+leftDrive.get_actual_velocities()[2])/3);
+	rightSpeed = std::abs((rightDrive.get_actual_velocities()[0] + rightDrive.get_actual_velocities()[1]+rightDrive.get_actual_velocities()[2])/3);
 
 
 	current_draw_speed_ratio = std::abs((2500*(double)(leftCurrentDraw+rightCurrentDraw)/(double)(leftCurrentLimit+rightCurrentLimit))/(std::abs(((leftSpeed+rightSpeed)+1))/2));
