@@ -52,7 +52,7 @@ pros::Motor rightDrive1(15, true);
 pros::Motor rightDrive2(16, true);
 pros::Motor rightDrive3(20, true);
 
-pros::ADILineSensor frisbeeTrackSensor(2);
+pros::ADIAnalogIn frisbeeTrackSensor(2);
 
 pros::Motor_Group leftDrive({leftDrive1, leftDrive2, leftDrive3});
 pros::Motor_Group rightDrive({rightDrive1, rightDrive2, rightDrive3});

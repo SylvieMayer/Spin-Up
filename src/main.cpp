@@ -4,6 +4,7 @@
 #include "pros/rtos.hpp"
 #include <cmath>
 #include <cstdint>
+#include <string>
 #include <vector>
 /*
 	IMPORTANT
@@ -22,15 +23,20 @@
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+const int CHASSIS_COLOR_START = 0x440044;//0xFF00FF;
+const int CHASSIS_COLOR_END = 0x004444;//0x00FFFF;
+
+void chassis_light_default(){
+	chassisLighting1.gradient(CHASSIS_COLOR_START, CHASSIS_COLOR_END, 0, 0, true, true);
+	chassisLighting2.gradient(CHASSIS_COLOR_START, CHASSIS_COLOR_END, 0, 0, false, true);
+	chassisLighting1.cycle(*chassisLighting1, 15, 0, true);
+	chassisLighting2.cycle(*chassisLighting2, 15);
+}
+
 void initialize(){
 
 	sylib::initialize();
-	chassisLighting1.gradient(0x880088, 0x008888, 0, 0, false, true);
-	chassisLighting2.gradient(0x880088, 0x008888, 0, 0, false, true);
-	chassisLighting1.cycle(*chassisLighting1, 15);
-	chassisLighting2.cycle(*chassisLighting2, 15);
-	frisbeeTrackSensor.calibrate();
-	frisbeeTrackLightingInitial = frisbeeTrackSensor.get_value_calibrated();
+	chassis_light_default();
 }
 
 /**
@@ -99,12 +105,7 @@ double actualCurrentLimit(double temperature){
     return currentLimit;
 }
 
-void chassis_light_default(){
-	chassisLighting1.gradient(0x880088, 0x008888, 0, 0, false, true);
-	chassisLighting2.gradient(0x880088, 0x008888, 0, 0, false, true);
-	chassisLighting1.cycle(*chassisLighting1, 15);
-	chassisLighting2.cycle(*chassisLighting2, 15);
-}
+
 
 const double current_draw_cutoff = 50;
 
@@ -138,7 +139,7 @@ void chassis_light_control(){
 
 
 	current_draw_speed_ratio = std::abs((2500*(double)(leftCurrentDraw+rightCurrentDraw)/(double)(leftCurrentLimit+rightCurrentLimit))/(std::abs(((leftSpeed+rightSpeed)+1))/2));
-	printf("%f\n", current_draw_speed_ratio);
+	// printf("%f\n", current_draw_speed_ratio);
 
 	shift_amount = (std::uint32_t)(((current_draw_speed_ratio-current_draw_cutoff)));
 
@@ -154,15 +155,34 @@ void chassis_light_control(){
 
 
 void opcontrol() {
+	
+	uint32_t control_ticks = 0;
+	int flyVel = 0;
+	int flyVelTarget = 0;
+	int flyVelError = 0;
 
 	uint32_t clock = sylib::millis();
 	while (true){
+		control_ticks++;
 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
 		flywheelCont();
 		intakeCont();
 		chassis_light_control();
 
-		// printf("%d|%f|%f|%f|%d\n", sylib::millis(), flywheel.get_velocity(), flywheel.get_velocity_motor_reported(), flywheel.get_velocity_target(), flywheel.get_velocity_error());
+		flyVel = (int)flywheel.get_velocity();
+		flyVelTarget = (int)flywheel.get_velocity_target();
+		flyVelError = flyVelTarget-flyVel;
+
+		if((control_ticks+6) % 12 == 0){
+			if(std::abs(flyVelError) > 50 && std::abs(flyVelTarget) < 3900 && sylib::millis() > 2000){
+				master.rumble("-");
+			}
+		}
+		else if ((control_ticks) % 12 == 0) {
+				master.set_text(0,0,std::to_string(flyVel) + " | " + std::to_string(flyVelTarget)+ " | " + std::to_string(flyVelError) + "    ");
+		}
+		// printf("%d\n", frisbeeTrackSensor.get_value());
+		// printf("%d|%f|%f|%f|%f|%d\n", sylib::millis(), flywheel.get_velocity(), flywheel.get_velocity_motor_reported(), flywheel.get_velocity_target(), flywheel.get_velocity_error(), flywheel.get_applied_voltage());
 		sylib::delay_until(&clock,10);
 	}
 }

@@ -45,9 +45,10 @@ def update_graph_live(n):
     # rotated = np.transpose(data)
     # plot = px.scatter(x=rotated[0], y=[rotated[1], rotated[3], rotated[7]], height=800)
     # return plot
-    df = pandas.read_csv('data.csv',delimiter='|',names =['time (ms)','velocity','vexos velocity','target','p controller','i controller','error','abs(error) * 15','voltage'],
+    
+    df = pandas.read_csv('data.csv',delimiter='|',names =['time (ms)','velocity','vexos velocity','target','error','voltage'],
                         skiprows=50,encoding='utf-16',skipfooter=50,engine='python')
-    plot = px.scatter(df,x='time (ms)',y=['target','velocity','abs(error) * 15','voltage','i controller'],height=800)
+    plot = px.scatter(df,x='time (ms)',y=['target','velocity','voltage'],height=800)
     return plot
 
     

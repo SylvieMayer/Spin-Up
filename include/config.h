@@ -37,4 +37,3 @@ int frisbeeDetect();
 
 //variables
 extern int flywheelRPMTarget;
-extern int frisbeeTrackLightingInitial;
