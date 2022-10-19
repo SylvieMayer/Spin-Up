@@ -36,6 +36,7 @@
 
 #include "api.h"
 #include "sylib/sylib.hpp"
+
 /**
  * You should add more #includes here
  */
@@ -70,7 +71,6 @@ void opcontrol(void);
 #ifdef __cplusplus
 }
 #endif
-#include "config.h"
 
 #ifdef __cplusplus
 /**

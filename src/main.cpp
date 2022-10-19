@@ -14,23 +14,7 @@
 	
 	Thanks -Zeke
 */
-double initStartTime = 0;
-/**
- * A callback function for LLEMU's center button.
- *
- * When this callback is fired, it will toggle line 2 of the LCD text between
- * "I was pressed!" and nothing.
- */
-void on_center_button() 
-{
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
-	}
-}
+
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -38,15 +22,15 @@ void on_center_button()
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-void initialize() 
-{
-	sylib::SylibDaemon::startSylibDaemon();
-	initStartTime = pros::millis();
-	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello PROS User!");
-	pros::lcd::register_btn1_cb(on_center_button);
+void initialize(){
 
-	//pros::Task getFlywheelRPM(getFlywheelRPMfn);
+	sylib::initialize();
+	chassisLighting1.gradient(0x880088, 0x008888, 0, 0, false, true);
+	chassisLighting2.gradient(0x880088, 0x008888, 0, 0, false, true);
+	chassisLighting1.cycle(*chassisLighting1, 15);
+	chassisLighting2.cycle(*chassisLighting2, 15);
+	frisbeeTrackSensor.calibrate();
+	frisbeeTrackLightingInitial = frisbeeTrackSensor.get_value_calibrated();
 }
 
 /**
@@ -54,7 +38,9 @@ void initialize()
  * the VEX Competition Switch, following either autonomous or opcontrol. When
  * the robot is enabled, this task will exit.
  */
-void disabled() {}
+void disabled() {
+	flywheel.stop();
+}
 
 /**
  * Runs after initialize(), and before autonomous when connected to the Field
@@ -93,99 +79,91 @@ void autonomous() {}
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
-void opcontrol() {
-	uint32_t mainTime = sylib::millis();
-	// sylib::Motor flywheel(17, 3600,true);
-	// sylib::Device a(1);
-	int tick = 0;
-	double gainCalculated = 0;
-	double valPrint = 0;
-	auto gainSma = sylib::EMAFilter();
-	// valPrint = gainSma.filter(3.2, 1);
-	printf("main start\n");
-	// led1.set_all(0xFF0000);
-	// led1.set_pixel(0x00FF00, 3);
-	std::vector<std::uint32_t> lights;
-	lights.resize(16);
-	// led1.set_all(0x444444);
-	while (true){
-		tick++;
-		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
-		flywheelCont();
-		for(int i = 0; i < 16; i++){
-			lights[i] = sylib::millis() + i*0x111111;
-		}
-		// led1.set_buffer(lights);
-		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
-        	flywheelRPMTarget = 5000;
-    	}
-		else{
-			if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)){
-            	flywheelRPMTarget = 0;
-        	}
-        	if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)){
-            	flywheelRPMTarget = 2700;
-        	}
-        	if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)){
-            	flywheelRPMTarget = 3150;
-        	}
-        	if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y)){
-            	flywheelRPMTarget = 3600;
-        	}
-    	}
-    	flywheel.set_velocity_custom_controller(flywheelRPMTarget);
-		if(sylib::millis() <= 20000){
-			flywheel.set_velocity_custom_controller(3200);
-			flywheelRPMTarget = 3200;
-		}
-		else if(sylib::millis() <= 40000){
-			flywheel.set_velocity_custom_controller(3600);
-			flywheelRPMTarget = 3600;
-		}
-		else if(sylib::millis() <= 60000){
-			flywheel.set_velocity_custom_controller(2700);
-			flywheelRPMTarget = 2700;
-		}
-		else if(sylib::millis() <= 70000){
-			flywheel.stop();
-		}
-		else if(sylib::millis() <= 90000){
-			flywheel.set_velocity(3200);
-			flywheelRPMTarget = 3200;
-		}
-		else if(sylib::millis() <= 110000){
-			flywheel.set_velocity(3600);
-			flywheelRPMTarget = 3600;
-		}
-		else if(sylib::millis() <= 130000){
-			flywheel.set_velocity(2700);
-			flywheelRPMTarget = 2700;
-		}
-		else{
-			flywheel.stop();
+double actualCurrentLimit(double temperature){
+    double currentLimit;
+    if(temperature>=70){
+        currentLimit = 0;
+    }
+    else if(temperature >= 65){
+        currentLimit = 312.5;
+    }
+    else if(temperature >= 60){
+        currentLimit = 625;
+    }
+    else if(temperature >= 55){
+        currentLimit = 1250;
+    }
+    else{
+        currentLimit = 2500;
+    }
+    return currentLimit;
+}
 
-		}
-		// gainCalculated = flywheel.get_applied_voltage()/flywheel.get_velocity();
-		// if (std::abs(gainCalculated) > 4.5 || std::abs(gainCalculated) < 2.5) {
-		// }
-		// else if(std::isnan(gainCalculated)){
-		// }
-		// else{
-		// 	// valPrint = gainSma.filter(gainCalculated, 0.005);
-		// }
-		gainCalculated = gainSma.filter(std::abs(flywheel.get_velocity_error()),0.05);
+void chassis_light_default(){
+	chassisLighting1.gradient(0x880088, 0x008888, 0, 0, false, true);
+	chassisLighting2.gradient(0x880088, 0x008888, 0, 0, false, true);
+	chassisLighting1.cycle(*chassisLighting1, 15);
+	chassisLighting2.cycle(*chassisLighting2, 15);
+}
 
-		if(gainCalculated > 300){
-			valPrint = 0;
-		}
-		else{
-			valPrint = gainCalculated;
-		}
-		// // flywheelRPMTarget = 3800;
-		// // flywheel.set_velocity_target(flywheelRPMTarget);
-		printf("%d|%f|%f|%d|%d|%d|%f|%f|%d\n", sylib::millis(), flywheel.get_velocity(), flywheel.get_velocity_motor_reported(), flywheelRPMTarget, flywheel.get_p_voltage(), flywheel.get_i_voltage(), flywheel.get_velocity_error(), 15*valPrint, flywheel.get_applied_voltage()/5);
-		sylib::delay_until(&mainTime,10);
+const double current_draw_cutoff = 50;
+
+void chassis_light_control(){
+	static int leftCurrentDraw;
+	static int rightCurrentDraw;
+
+	static int leftCurrentLimit;
+	static int rightCurrentLimit;
+
+	static double leftSpeed;
+	static double rightSpeed;
+
+	static std::uint32_t shift_amount;
+
+	static double current_draw_speed_ratio;
+
+	leftCurrentDraw = (leftDrive.get_current_draws()[0]+leftDrive.get_current_draws()[1]+leftDrive.get_current_draws()[2])/3;
+	rightCurrentDraw = (rightDrive.get_current_draws()[0]+rightDrive.get_current_draws()[1]+rightDrive.get_current_draws()[2])/3;
+
+	leftCurrentLimit = (actualCurrentLimit(leftDrive1.get_temperature()) +
+					    actualCurrentLimit(leftDrive2.get_temperature()) + 
+						actualCurrentLimit(leftDrive3.get_temperature()))/3;
+
+	rightCurrentLimit = (actualCurrentLimit(rightDrive1.get_temperature()) +
+					     actualCurrentLimit(rightDrive2.get_temperature()) + 
+						 actualCurrentLimit(rightDrive3.get_temperature()))/3;
+
+	leftSpeed = (leftDrive.get_actual_velocities()[0] + leftDrive.get_actual_velocities()[1]+leftDrive.get_actual_velocities()[2])/3;
+	rightSpeed = (rightDrive.get_actual_velocities()[0] + rightDrive.get_actual_velocities()[1]+rightDrive.get_actual_velocities()[2])/3;
+
+
+	current_draw_speed_ratio = std::abs((2500*(double)(leftCurrentDraw+rightCurrentDraw)/(double)(leftCurrentLimit+rightCurrentLimit))/(std::abs(((leftSpeed+rightSpeed)+1))/2));
+	printf("%f\n", current_draw_speed_ratio);
+
+	shift_amount = (std::uint32_t)(((current_draw_speed_ratio-current_draw_cutoff)));
+
+	if(current_draw_speed_ratio > current_draw_cutoff){
+		chassisLighting1.color_shift(shift_amount, -shift_amount, -shift_amount);
+		chassisLighting2.color_shift(shift_amount, -shift_amount, -shift_amount);
+	}
+	else{
+		chassisLighting1.color_shift(0, 0, 0);
+		chassisLighting2.color_shift(0, 0, 0);
 	}
 }
-		// printf("created main task loop\n");
+
+
+void opcontrol() {
+
+	uint32_t clock = sylib::millis();
+	while (true){
+		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+		flywheelCont();
+		intakeCont();
+		chassis_light_control();
+
+		// printf("%d|%f|%f|%f|%d\n", sylib::millis(), flywheel.get_velocity(), flywheel.get_velocity_motor_reported(), flywheel.get_velocity_target(), flywheel.get_velocity_error());
+		sylib::delay_until(&clock,10);
+	}
+}
 

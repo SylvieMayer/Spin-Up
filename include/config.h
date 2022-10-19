@@ -11,8 +11,17 @@ extern pros::Motor leftDrive3;
 extern pros::Motor rightDrive1;
 extern pros::Motor rightDrive2;
 extern pros::Motor rightDrive3;
+
+
 extern sylib::Motor flywheel;
-extern sylib::Addrled led1;
+
+extern sylib::Addrled trackLighting;
+extern sylib::Addrled chassisLighting1;
+extern sylib::Addrled chassisLighting2;
+
+extern pros::ADILineSensor frisbeeTrackSensor;
+
+
 extern pros::Motor intake;
 
 extern pros::Motor_Group leftDrive;
@@ -24,6 +33,8 @@ extern pros::Motor_Group rightDrive;
 void drive(double left, double right);
 void flywheelCont();
 void intakeCont();
+int frisbeeDetect();
 
 //variables
 extern int flywheelRPMTarget;
+extern int frisbeeTrackLightingInitial;

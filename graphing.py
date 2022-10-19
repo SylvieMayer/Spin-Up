@@ -47,7 +47,7 @@ def update_graph_live(n):
     # return plot
     df = pandas.read_csv('data.csv',delimiter='|',names =['time (ms)','velocity','vexos velocity','target','p controller','i controller','error','abs(error) * 15','voltage'],
                         skiprows=50,encoding='utf-16',skipfooter=50,engine='python')
-    plot = px.scatter(df,x='time (ms)',y=['target','velocity','abs(error) * 15','voltage'],height=800)
+    plot = px.scatter(df,x='time (ms)',y=['target','velocity','abs(error) * 15','voltage','i controller'],height=800)
     return plot
 
     

@@ -50,36 +50,109 @@ double raw;
 double kV = 3.45;
 double rawPWMValue;
 
-// sylib::SylviesPogVelocityEstimator flywheelVelocity(&flywheel, 3600);
 
-double actualCurrentLimit(double temperature){
-    double currentLimit;
-    if(temperature>=70){
-        currentLimit = 0;
+bool frisbeeInTrack = false;
+bool frisbeeInTrackPrevious = false;
+bool frisbeeLeftTrack = false;
+bool frisbeeEnteredTrack = false;
+int frisbeeEnteredTrackStartTime = 0;
+
+int getFrisbeeState(){
+    if(frisbeeEnteredTrack){
+        return 1;
     }
-    else if(temperature >= 65){
-        currentLimit = 312.5;
+    else if(frisbeeLeftTrack){
+        return 2;
     }
-    else if(temperature >= 60){
-        currentLimit = 625;
-    }
-    else if(temperature >= 55){
-        currentLimit = 1250;
+    else if(frisbeeInTrack){
+        return 3;
     }
     else{
-        currentLimit = 2500;
+        return 0;
     }
-    return currentLimit;
 }
 
-void flywheel_speed_set(){
+int frisbeeDetect(){
+    static sylib::hsv pulseColor = sylib::hsv();
+    pulseColor.s = 1;
+    pulseColor.v = 1;
 
+    static double lightReading = frisbeeTrackSensor.get_value_calibrated();
+
+    if(lightReading <= frisbeeTrackLightingInitial*0.65){
+        frisbeeInTrack = true;
+        if(!frisbeeInTrackPrevious){
+            frisbeeEnteredTrack = true;
+            pulseColor.h = std::rand() % 360;
+            trackLighting.pulse(sylib::Addrled::hsv_to_rgb(pulseColor), 2, 50);
+            frisbeeEnteredTrackStartTime = sylib::millis();
+        }
+        else{
+            frisbeeEnteredTrack = false;
+        }
+    }
+    else{
+        frisbeeInTrack = false;
+        if(!frisbeeInTrackPrevious){
+            frisbeeEnteredTrack = false;
+        }
+        else{
+            frisbeeEnteredTrack = true;
+        }
+    }
+
+    frisbeeInTrackPrevious = frisbeeInTrack;
+
+    if(frisbeeEnteredTrack){
+        return 1;
+    }
+    else if(frisbeeLeftTrack){
+        return 2;
+    }
+    else if(frisbeeInTrack){
+        return 3;
+    }
+    else{
+        return 0;
+    }
 }
 
 void flywheelCont()
 {
     //update button placement later
+    if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A))
+    {
+        flywheelRPMTarget = 0;
+    }
+    else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
+    {
+        flywheelRPMTarget = 2700;
+    }
+    else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
+    {
+        flywheelRPMTarget = 3150;
+    }
+    else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
+    {
+        flywheelRPMTarget = 3600;
+    }
+    else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){
+        flywheelRPMTarget = 4000;
+    }
+    else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)){
+        flywheelRPMTarget += 50;
+    }
+    else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)){
+        flywheelRPMTarget -= 50;
+    }
+    frisbeeDetect();
 
+    if(sylib::millis() - frisbeeEnteredTrackStartTime <= 100){
+        flywheel.set_voltage(12000);
+    }
+    else{
+        flywheel.set_velocity_custom_controller(flywheelRPMTarget); 
+    }
 }
 
 void intakeCont()
@@ -89,7 +162,13 @@ void intakeCont()
         intake.move_velocity(200);
     } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
     {
-        intake.move_velocity(-200);
+        if(sylib::millis()-frisbeeEnteredTrackStartTime <= 200){
+            intake.move_velocity(200);
+        }
+        else{
+            intake.move_velocity(-200);
+        }
+        
     } else 
     {
         intake.move_velocity(0);
