@@ -163,8 +163,8 @@ void flywheelCont()
         }
         frisbeeDetect();
 
-        if((sylib::millis() - frisbeeEnteredTrackStartTime <= 100) && flywheelRPMTarget < 500){
-            flywheel.set_voltage(12000);
+        if((sylib::millis() - frisbeeEnteredTrackStartTime <= 500) && flywheelRPMTarget > 500){
+            flywheel.set_voltage(-12000);
         }
         else{
             flywheel.set_velocity_custom_controller(flywheelRPMTarget); 
