@@ -1,8 +1,12 @@
 /**
- * \file sylib/motor.hpp
+ * \file include/sylib/motor.hpp
  *
  * \brief Contains prototypes for functions relating to smart motor
  * control and telemetry
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
 #pragma once
@@ -18,19 +22,32 @@ namespace sylib {
  */
 class SylviesPogVelocityEstimator {
    private:
+    sylib::SMAFilter smaFilterVelocity;
+    sylib::SMAFilter smaFilterAccel;
+    sylib::SMAFilter smaFilterJerk;
+    sylib::SMAFilter smaFilterSnap;
+    sylib::MedianFilter medianFilter;
+    sylib::EMAFilter emaFilter;
+    double motorGearing;
+    sylib::SympleDerivativeSolver preFilterAccelSolver;
+    sylib::SympleDerivativeSolver preFilterJerkSolver;
+    sylib::SympleDerivativeSolver preFilterSnapSolver;
+    sylib::SympleDerivativeSolver outputAccelSolver;
+    sylib::SympleDerivativeSolver outputJerkSolver;
+    sylib::SympleDerivativeSolver outputSnapSolver;
+    sylib::RangeExtremaFilter maxFilterAccel;
+
+
     uint32_t previousInternalMotorClock;
     double oldMotorTicks;
     double dN;
     double dT;
     double rawVelocity;
     double motorVoltageTarget;
-    double smaFilteredVelocity;
-    double medianFilteredVelocity;
     double emaFilteredVelocity;
+    double smaFilteredVelocity;
     double smaFilteredAccel;
-    double smaFilteredJerk;
-    double smaFilteredSnap;
-    double motorGearing;
+    double medianFilteredVelocity;
     double outputVelocity;
     double preFilterAcceleration;
     double preFilterJerk;
@@ -40,19 +57,15 @@ class SylviesPogVelocityEstimator {
     double outputSnap;
     double accelCalculatedkA;
     double maxFilteredAccel;
-    sylib::SMAFilter smaFilterVelocity;
-    sylib::SMAFilter smaFilterAccel;
-    sylib::SMAFilter smaFilterJerk;
-    sylib::SMAFilter smaFilterSnap;
-    sylib::EMAFilter emaFilter;
-    sylib::MedianFilter medianFilter;
-    sylib::SympleDerivativeSolver preFilterAccelSolver;
-    sylib::SympleDerivativeSolver preFilterJerkSolver;
-    sylib::SympleDerivativeSolver preFilterSnapSolver;
-    sylib::SympleDerivativeSolver outputAccelSolver;
-    sylib::SympleDerivativeSolver outputJerkSolver;
-    sylib::SympleDerivativeSolver outputSnapSolver;
-    sylib::RangeExtremaFilter maxFilterAccel;
+    double smaFilteredJerk;
+    double smaFilteredSnap;
+    
+    
+    
+    
+    
+    
+    
 
    public:
     /**
@@ -192,15 +205,18 @@ class SylviesPogVelocityEstimator {
  */
 class Motor : private Device {
    private:
-    // SDK things
-    const V5_DeviceT device;
-    void set_motor_controller();
-    // Config settings
     const std::uint8_t smart_port;
     const double gearing;
     bool reversed;
-    sylib::SylviesPogVelocityEstimator motorVelocityTracker;
+    const V5_DeviceT device;
+    void set_motor_controller();
     sylib::VoltageEstimation motorVoltageEstimator;
+    // Config settings
+    
+    
+    
+    sylib::SylviesPogVelocityEstimator motorVelocityTracker;
+    
     sylib::ProportionalController motorPController;
     sylib::IntegralController motorIController;
     sylib::DerivativeController motorDController;
@@ -240,6 +256,26 @@ class Motor : private Device {
     double position_target;
     double velocity_target;
     std::int32_t voltage_target;
+
+
+    /*
+    smart_port(smart_port),
+      gearing(gearing),
+      reversed(reverse),
+      device(vexDeviceGetByIndex(smart_port - 1)),
+      motorVoltageEstimator{speedController.kV, gearing},
+      motorPController{speedController.kP,
+                       std::shared_ptr<double>(&velocity_error),
+                       gearing,
+                       true,
+                       speedController.kP2,
+                       speedController.pRange},
+      motorIController{speedController.kI, std::shared_ptr<double>(&velocity_error), gearing, true,
+                       speedController.antiWindupRange},
+      motorDController{speedController.kD, std::shared_ptr<double>(&velocity_error), gearing},
+      motorTBHController{speedController.kH, std::shared_ptr<double>(&velocity_error)},
+      speedController(speedController) {
+    */
 
    public:
     /**

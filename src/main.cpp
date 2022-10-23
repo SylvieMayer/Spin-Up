@@ -23,8 +23,10 @@
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-const int CHASSIS_COLOR_START = 0x440044;//0xFF00FF;
-const int CHASSIS_COLOR_END = 0x004444;//0x00FFFF;
+const int CHASSIS_COLOR_START = 0x440044;
+const int CHASSIS_COLOR_END = 0x004444;
+// const int CHASSIS_COLOR_START = 0xFF00FF;
+// const int CHASSIS_COLOR_END = 0x00FFFF;
 
 void chassis_light_default(){
 	chassisLighting1.gradient(CHASSIS_COLOR_START, CHASSIS_COLOR_END, 0, 0, true, true);
@@ -37,6 +39,10 @@ void initialize(){
 
 	sylib::initialize();
 	chassis_light_default();
+	stringShooter.set_value(false);
+	leftRot.reset_position();
+	rightRot.reset_position();
+	imu.reset();
 }
 
 /**
@@ -70,21 +76,7 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {}
 
-/**
- * Runs the operator control code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the operator
- * control mode.
- *
- * If no competition control is connected, this function will run immediately
- * following initialize().
- *
- * If the robot is disabled or communications is lost, the
- * operator control task will be stopped. Re-enabling the robot will restart the
- * task, not resume it from where it left off.
- */
 double actualCurrentLimit(double temperature){
     double currentLimit;
     if(temperature>=70){
@@ -139,7 +131,6 @@ void chassis_light_control(){
 
 
 	current_draw_speed_ratio = std::abs((2500*(double)(leftCurrentDraw+rightCurrentDraw)/(double)(leftCurrentLimit+rightCurrentLimit))/(std::abs(((leftSpeed+rightSpeed)+1))/2));
-	// printf("%f\n", current_draw_speed_ratio);
 
 	shift_amount = (std::uint32_t)(((current_draw_speed_ratio-current_draw_cutoff)));
 
@@ -152,6 +143,56 @@ void chassis_light_control(){
 		chassisLighting2.color_shift(0, 0, 0);
 	}
 }
+const double TRACKING_WIDTH = 10.375;
+const double WHEEL_DIAMETER = 3.25;
+double theta = 0;
+double x_pos = 0;
+double y_pos = 0;
+double x_target = 0;
+double y_target = 0;
+
+double odomControlLoop(){
+	static int ticks = 0;
+	static int previous_left = leftRot.get_position();
+	static int previous_right = rightRot.get_position();
+	static double delta_left = 0;
+	static double delta_right = 0;
+	static double delta_theta = 0;
+	
+
+	int current_left = leftRot.get_position();
+	int current_right = rightRot.get_position();
+	ticks++;
+	delta_left = -(current_left - previous_left)*WHEEL_DIAMETER*M_PI/88125;
+	delta_right = (current_right - previous_right)*WHEEL_DIAMETER*M_PI/88125;
+
+	// previous_left = current_left;
+	// previous_right = current_right;
+
+	theta = (delta_left - delta_right)/TRACKING_WIDTH;
+	if(ticks%5 == 0){
+		printf("%d,%f,%f,%f\n",sylib::millis(), theta, delta_left, delta_right);
+	}
+	return theta*180/M_PI;
+}
+
+
+void autonomous() {}
+
+/**
+ * Runs the operator control code. This function will be started in its own task
+ * with the default priority and stack size whenever the robot is enabled via
+ * the Field Management System or the VEX Competition Switch in the operator
+ * control mode.
+ *
+ * If no competition control is connected, this function will run immediately
+ * following initialize().
+ *
+ * If the robot is disabled or communications is lost, the
+ * operator control task will be stopped. Re-enabling the robot will restart the
+ * task, not resume it from where it left off.
+ */
+
 
 
 void opcontrol() {
@@ -165,6 +206,16 @@ void opcontrol() {
 	while (true){
 		control_ticks++;
 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+		if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_L1) &&
+		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && 
+		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && 
+		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+
+			stringShooter.set_value(true);
+		}
+		else{
+			
+		}
 		flywheelCont();
 		intakeCont();
 		chassis_light_control();
@@ -181,8 +232,8 @@ void opcontrol() {
 		else if ((control_ticks) % 12 == 0) {
 				master.set_text(0,0,std::to_string(flyVel) + " | " + std::to_string(flyVelTarget)+ " | " + std::to_string(flyVelError) + "    ");
 		}
-		// printf("%d\n", frisbeeTrackSensor.get_value());
-		// printf("%d|%f|%f|%f|%f|%d\n", sylib::millis(), flywheel.get_velocity(), flywheel.get_velocity_motor_reported(), flywheel.get_velocity_target(), flywheel.get_velocity_error(), flywheel.get_applied_voltage());
+		
+		odomControlLoop();
 		sylib::delay_until(&clock,10);
 	}
 }
