@@ -11,6 +11,7 @@
 */
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
+pros::Controller partner(pros::E_CONTROLLER_PARTNER);
 
 
 //motors 
@@ -53,6 +54,12 @@ pros::Motor rightDrive2(16, true);
 pros::Motor rightDrive3(20, true);
 
 pros::ADIAnalogIn frisbeeTrackSensor(2);
+pros::ADIDigitalOut stringShooter(1, false);
+pros::Distance indexerSensor(5);
+pros::Imu imu(2);
+
+pros::Rotation leftRot(3);
+pros::Rotation rightRot(10);
 
 pros::Motor_Group leftDrive({leftDrive1, leftDrive2, leftDrive3});
 pros::Motor_Group rightDrive({rightDrive1, rightDrive2, rightDrive3});
