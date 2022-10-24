@@ -101,97 +101,17 @@ void chassis_light_control(){
 		chassisLighting2.color_shift(0, 0, 0);
 	}
 }
-const double TRACKING_WIDTH = 10.375;
-const double WHEEL_DIAMETER = 3.25;
-double theta = 0;
-double x_pos = 0;
-double y_pos = 0;
-double x_target = 0;
-double y_target = 0;
 
-void turnToAngle(double angle){
-	double error = angle-(int)theta % 360;
-	double prevError = error;
-	double integral = 0;
-	double power = 0;
-	const double kP = 1;
-	const double kI = 0.0;
-	const double kD = 0.0;
-	double prevTime = sylib::millis();
-	bool endMovement = false;
-	bool waitingForEnd = true;
-	int endMovementTime = 0;
-	printf("turn called: %f\n", error);
-
-
-	while(!endMovement){
-		error = angle-(int)theta % 360;
-		power = error * kP;
-		power += ((error-prevError)/(sylib::millis()-prevTime)) * kD;
-		integral += (error * (sylib::millis() - prevTime));
-		power += integral * kI;
-
-		prevError = error;
-		prevTime = sylib::millis();
-
-		leftDrive.move_velocity(-power);
-		rightDrive.move_velocity(power);
-
-		if(std::abs(error) < 1.5 && waitingForEnd){
-			waitingForEnd = false;
-			endMovementTime = sylib::millis();
-		}
-		else{
-			waitingForEnd = true;
-		}
-		if(!waitingForEnd && sylib::millis() - endMovementTime > 500){
-			endMovement = true;
-		}
-		printf("%f | %f\n", error, power);
-
-		sylib::delay(10);
-	}
-	printf("end\n");
-	leftDrive.move_velocity(0);
-	rightDrive.move_velocity(0);
-}
-
-void odomControlLoop(void * param){
-	static int ticks = 0;
-	static int previous_left = leftRot.get_position();
-	static int previous_right = rightRot.get_position();
-	static double delta_left = 0;
-	static double delta_right = 0;
-	static double delta_theta = 0;
-	
-	while(true){
-		int current_left = leftRot.get_position();
-		int current_right = rightRot.get_position();
-		ticks++;
-		delta_left = -(current_left - previous_left)*WHEEL_DIAMETER*M_PI/88125;
-		delta_right = (current_right - previous_right)*WHEEL_DIAMETER*M_PI/88125;
-
-		// previous_left = current_left;
-		// previous_right = current_right;
-
-		theta = ((delta_left - delta_right)/TRACKING_WIDTH)*180/M_PI;
-		if(ticks%5 == 0){
-			// printf("%d,%f,%f,%f\n",sylib::millis(), theta, delta_left, delta_right);
-			// printf("%f\n", theta);
-		}
-		sylib::delay(10);
-	}
-}
 
 void initialize(){
-
 	sylib::initialize();
 	chassis_light_default();
 	stringShooter.set_value(false);
 	leftRot.reset_position();
 	rightRot.reset_position();
 	imu.reset();
-	
+	pros::Task odomTask(odomControlLoop);
+
 }
 
 /**
@@ -230,33 +150,7 @@ void competition_initialize() {}
 
 
 void autonomous() {
-	pros::Task odomTask(odomControlLoop);
-	printf("task started\n");
-	flywheel.set_velocity_custom_controller(3700);
-	leftDrive.move_velocity(0);
-	rightDrive.move_velocity(0);
-	intake.move_velocity(200);
-	sylib::delay(500);
-	intake.move_velocity(0);
-	leftDrive.move_velocity(-20);
-	rightDrive.move_velocity(-35);
-	sylib::delay(500);
-	leftDrive.move_velocity(0);
-	rightDrive.move_velocity(0);
-	while(flywheel.get_velocity_error() > 25){
-		sylib::delay(10);
-	}
-	intake.move_velocity(-200);
-	sylib::delay(300);
-	intake.move_velocity(0);
-	while(flywheel.get_velocity_error() > 25){
-		sylib::delay(10);
-	}
-	intake.move_velocity(-200);
-	sylib::delay(2000);
-	intake.move_velocity(0);
-	turnToAngle(90);
-
+	auton1();
 }
 
 /**

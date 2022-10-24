@@ -47,6 +47,9 @@ void drive(double left, double right);
 void flywheelCont();
 void intakeCont();
 int frisbeeDetect();
+void odomControlLoop(void * param);
+void turnToAngle();
+void auton1();
 
 //variables
 extern int flywheelRPMTarget;
