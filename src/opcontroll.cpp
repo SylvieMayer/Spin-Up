@@ -20,12 +20,12 @@ int flywheelRPMTarget = 0;
 void drive(double left, double right){
     left = left*100;
     right = right*100;
-    if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP){
+    if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)){
         leftDrive.move_voltage(12000 * .8);
         rightDrive.move_voltage(12000 * .8);
     } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)){
         leftDrive.move_voltage(-12000 * .8);
-        rightDrive.move_voltage-(12000 * .8);
+        rightDrive.move_voltage(-12000 * .8);
     } else {    
     if (std::abs(left) > deadzone){
       real_left=-left*1.05 + 5;
@@ -177,6 +177,12 @@ void flywheelCont()
         else{
             flywheel.set_velocity_custom_controller(flywheelRPMTarget); 
         }
+    }
+    if(partner.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)){
+        angler.set_value(true);
+    }
+    if(partner.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)){
+        angler.set_value(false);
     }
 }
 

@@ -2,6 +2,7 @@
 #include "config.h"
 #include "pros/adi.hpp"
 #include "pros/rtos.hpp"
+#include "sylib/system.hpp"
 #include <cmath>
 #include <cstdint>
 #include <string>
@@ -22,59 +23,6 @@
  *
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
- */
-const int CHASSIS_COLOR_START = 0x440044;
-const int CHASSIS_COLOR_END = 0x004444;
-// const int CHASSIS_COLOR_START = 0xFF00FF;
-// const int CHASSIS_COLOR_END = 0x00FFFF;
-
-void chassis_light_default(){
-	chassisLighting1.gradient(CHASSIS_COLOR_START, CHASSIS_COLOR_END, 0, 0, true, true);
-	chassisLighting2.gradient(CHASSIS_COLOR_START, CHASSIS_COLOR_END, 0, 0, false, true);
-	chassisLighting1.cycle(*chassisLighting1, 15, 0, true);
-	chassisLighting2.cycle(*chassisLighting2, 15);
-}
-
-void initialize(){
-
-	sylib::initialize();
-	chassis_light_default();
-	stringShooter.set_value(false);
-	leftRot.reset_position();
-	rightRot.reset_position();
-	imu.reset();
-}
-
-/**
- * Runs while the robot is in the disabled state of Field Management System or
- * the VEX Competition Switch, following either autonomous or opcontrol. When
- * the robot is enabled, this task will exit.
- */
-void disabled() {
-	flywheel.stop();
-}
-
-/**
- * Runs after initialize(), and before autonomous when connected to the Field
- * Management System or the VEX Competition Switch. This is intended for
- * competition-specific initialization routines, such as an autonomous selector
- * on the LCD.
- *
- * This task will exit when the robot is enabled and autonomous or opcontrol
- * starts.
- */
-void competition_initialize() {}
-
-/**
- * Runs the user autonomous code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the autonomous
- * mode. Alternatively, this function may be called in initialize or opcontrol
- * for non-competition testing purposes.
- *
- * If the robot is disabled or communications is lost, the autonomous task
- * will be stopped. Re-enabling the robot will restart the task, not re-start it
- * from where it left off.
  */
 
 double actualCurrentLimit(double temperature){
@@ -97,7 +45,17 @@ double actualCurrentLimit(double temperature){
     return currentLimit;
 }
 
+const int CHASSIS_COLOR_START = 0x440044;
+const int CHASSIS_COLOR_END = 0x004444;
+// const int CHASSIS_COLOR_START = 0xFF00FF;
+// const int CHASSIS_COLOR_END = 0x00FFFF;
 
+void chassis_light_default(){
+	chassisLighting1.gradient(CHASSIS_COLOR_START, CHASSIS_COLOR_END, 0, 0, true, true);
+	chassisLighting2.gradient(CHASSIS_COLOR_START, CHASSIS_COLOR_END, 0, 0, false, true);
+	chassisLighting1.cycle(*chassisLighting1, 15, 0, true);
+	chassisLighting2.cycle(*chassisLighting2, 15);
+}
 
 const double current_draw_cutoff = 50;
 
@@ -151,7 +109,54 @@ double y_pos = 0;
 double x_target = 0;
 double y_target = 0;
 
-double odomControlLoop(){
+void turnToAngle(double angle){
+	double error = angle-(int)theta % 360;
+	double prevError = error;
+	double integral = 0;
+	double power = 0;
+	const double kP = 1;
+	const double kI = 0.0;
+	const double kD = 0.0;
+	double prevTime = sylib::millis();
+	bool endMovement = false;
+	bool waitingForEnd = true;
+	int endMovementTime = 0;
+	printf("turn called: %f\n", error);
+
+
+	while(!endMovement){
+		error = angle-(int)theta % 360;
+		power = error * kP;
+		power += ((error-prevError)/(sylib::millis()-prevTime)) * kD;
+		integral += (error * (sylib::millis() - prevTime));
+		power += integral * kI;
+
+		prevError = error;
+		prevTime = sylib::millis();
+
+		leftDrive.move_velocity(-power);
+		rightDrive.move_velocity(power);
+
+		if(std::abs(error) < 1.5 && waitingForEnd){
+			waitingForEnd = false;
+			endMovementTime = sylib::millis();
+		}
+		else{
+			waitingForEnd = true;
+		}
+		if(!waitingForEnd && sylib::millis() - endMovementTime > 500){
+			endMovement = true;
+		}
+		printf("%f | %f\n", error, power);
+
+		sylib::delay(10);
+	}
+	printf("end\n");
+	leftDrive.move_velocity(0);
+	rightDrive.move_velocity(0);
+}
+
+void odomControlLoop(void * param){
 	static int ticks = 0;
 	static int previous_left = leftRot.get_position();
 	static int previous_right = rightRot.get_position();
@@ -159,25 +164,100 @@ double odomControlLoop(){
 	static double delta_right = 0;
 	static double delta_theta = 0;
 	
+	while(true){
+		int current_left = leftRot.get_position();
+		int current_right = rightRot.get_position();
+		ticks++;
+		delta_left = -(current_left - previous_left)*WHEEL_DIAMETER*M_PI/88125;
+		delta_right = (current_right - previous_right)*WHEEL_DIAMETER*M_PI/88125;
 
-	int current_left = leftRot.get_position();
-	int current_right = rightRot.get_position();
-	ticks++;
-	delta_left = -(current_left - previous_left)*WHEEL_DIAMETER*M_PI/88125;
-	delta_right = (current_right - previous_right)*WHEEL_DIAMETER*M_PI/88125;
+		// previous_left = current_left;
+		// previous_right = current_right;
 
-	// previous_left = current_left;
-	// previous_right = current_right;
-
-	theta = (delta_left - delta_right)/TRACKING_WIDTH;
-	if(ticks%5 == 0){
-		printf("%d,%f,%f,%f\n",sylib::millis(), theta, delta_left, delta_right);
+		theta = ((delta_left - delta_right)/TRACKING_WIDTH)*180/M_PI;
+		if(ticks%5 == 0){
+			// printf("%d,%f,%f,%f\n",sylib::millis(), theta, delta_left, delta_right);
+			// printf("%f\n", theta);
+		}
+		sylib::delay(10);
 	}
-	return theta*180/M_PI;
 }
 
+void initialize(){
 
-void autonomous() {}
+	sylib::initialize();
+	chassis_light_default();
+	stringShooter.set_value(false);
+	leftRot.reset_position();
+	rightRot.reset_position();
+	imu.reset();
+	
+}
+
+/**
+ * Runs while the robot is in the disabled state of Field Management System or
+ * the VEX Competition Switch, following either autonomous or opcontrol. When
+ * the robot is enabled, this task will exit.
+ */
+void disabled() {
+	flywheel.stop();
+}
+
+/**
+ * Runs after initialize(), and before autonomous when connected to the Field
+ * Management System or the VEX Competition Switch. This is intended for
+ * competition-specific initialization routines, such as an autonomous selector
+ * on the LCD.
+ *
+ * This task will exit when the robot is enabled and autonomous or opcontrol
+ * starts.
+ */
+void competition_initialize() {}
+
+/**
+ * Runs the user autonomous code. This function will be started in its own task
+ * with the default priority and stack size whenever the robot is enabled via
+ * the Field Management System or the VEX Competition Switch in the autonomous
+ * mode. Alternatively, this function may be called in initialize or opcontrol
+ * for non-competition testing purposes.
+ *
+ * If the robot is disabled or communications is lost, the autonomous task
+ * will be stopped. Re-enabling the robot will restart the task, not re-start it
+ * from where it left off.
+ */
+
+
+
+
+void autonomous() {
+	pros::Task odomTask(odomControlLoop);
+	printf("task started\n");
+	flywheel.set_velocity_custom_controller(3700);
+	leftDrive.move_velocity(0);
+	rightDrive.move_velocity(0);
+	intake.move_velocity(200);
+	sylib::delay(500);
+	intake.move_velocity(0);
+	leftDrive.move_velocity(-20);
+	rightDrive.move_velocity(-35);
+	sylib::delay(500);
+	leftDrive.move_velocity(0);
+	rightDrive.move_velocity(0);
+	while(flywheel.get_velocity_error() > 25){
+		sylib::delay(10);
+	}
+	intake.move_velocity(-200);
+	sylib::delay(300);
+	intake.move_velocity(0);
+	while(flywheel.get_velocity_error() > 25){
+		sylib::delay(10);
+	}
+	intake.move_velocity(-200);
+	sylib::delay(2000);
+	intake.move_velocity(0);
+	turnToAngle(90);
+
+}
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -233,7 +313,7 @@ void opcontrol() {
 				master.set_text(0,0,std::to_string(flyVel) + " | " + std::to_string(flyVelTarget)+ " | " + std::to_string(flyVelError) + "    ");
 		}
 		
-		odomControlLoop();
+		// odomControlLoop();
 		sylib::delay_until(&clock,10);
 	}
 }

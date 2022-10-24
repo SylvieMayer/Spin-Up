@@ -27,6 +27,7 @@ extern sylib::Addrled chassisLighting2;
 
 extern pros::ADILineSensor frisbeeTrackSensor;
 extern pros::ADIDigitalOut stringShooter;
+extern pros::ADIDigitalOut angler;
 extern pros::Distance indexerSensor;
 extern pros::IMU imu;
 

@@ -55,6 +55,7 @@ pros::Motor rightDrive3(20, true);
 
 pros::ADIAnalogIn frisbeeTrackSensor(2);
 pros::ADIDigitalOut stringShooter(1, false);
+pros::ADIDigitalOut angler(4, false);
 pros::Distance indexerSensor(5);
 pros::Imu imu(2);
 
