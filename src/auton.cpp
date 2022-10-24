@@ -1,5 +1,6 @@
 #include "main.h"
 #include "config.h"
+#include <cmath>
 /* 
     auton and auton specific functions will go here
     feel free to make additional files if necessary
@@ -9,15 +10,79 @@
 const double TRACKING_WIDTH = 10.47;
 const double WHEEL_DIAMETER = 3.25;
 double theta = 0;
-double x_pos = 0;
-double y_pos = 0;
-double x_target = 0;
-double y_target = 0;
-double total_left = 0;
-double total_right = 0;
+double theta_target = 0;
+int current_left = 0;
+int current_right = 0;
+double current_avg = 0;
+
+void driveDistance(double target_distance){
+	double start_avg = (current_left+current_right)/2.0;
+
+	current_avg = (current_left+current_right)/2.0 - start_avg;
+
+	double error = target_distance - current_avg;
+
+	double prevTime = sylib::millis();
+	bool endMovement = false;
+	bool waitingForEnd = true;
+	int endMovementTime = 0;
+
+	double prevError = error;
+	double integral = 0;
+	double power = 0;
+	const double kP = 1;
+	const double kI = 0.0;
+	const double kD = 0.0;
+
+	const double kP2 = 3;
+
+	double theta_error = 0;
+
+	while(!endMovement){
+		theta_error = std::fmod(theta_target - theta, 360);
+		current_avg = (current_left+current_right)/2.0 - start_avg;
+		error = target_distance - current_avg;
+
+		power = error * kP;
+		power += ((error-prevError)/(sylib::millis()-prevTime)) * kD;
+		integral += (error * (sylib::millis() - prevTime));
+		power += integral * kI;
+
+		prevError = error;
+		prevTime = sylib::millis();
+
+		if(power > 150){
+			power = 150;
+		}
+		else if(power < -150){
+			power = -150;
+		}
+
+		leftDrive.move_velocity(-power-theta_error*kP2);
+		rightDrive.move_velocity(-power + theta_error*kP2);
+
+		if(std::abs(error) < 0.5 && waitingForEnd){
+			waitingForEnd = false;
+			endMovementTime = sylib::millis();
+		}
+		else{
+			waitingForEnd = true;
+		}
+		if(!waitingForEnd && sylib::millis() - endMovementTime > 500){
+			endMovement = true;
+		}
+
+		sylib::delay(10);
+
+	}
+	leftDrive.move_velocity(0);
+	rightDrive.move_velocity(0);
+	
+}
 
 void turnToAngle(double angle){
-	double error = angle-(int)theta % 360;
+	theta_target = angle;
+	double error = std::fmod(theta_target - theta, 360);
 	double prevError = error;
 	double integral = 0;
 	double power = 0;
@@ -28,11 +93,10 @@ void turnToAngle(double angle){
 	bool endMovement = false;
 	bool waitingForEnd = true;
 	int endMovementTime = 0;
-	printf("turn called: %f\n", error);
 
 
 	while(!endMovement){
-		error = angle-(int)theta % 360;
+		error = std::fmod(theta_target - theta, 360);
 		power = error * kP;
 		power += ((error-prevError)/(sylib::millis()-prevTime)) * kD;
 		integral += (error * (sylib::millis() - prevTime));
@@ -41,10 +105,17 @@ void turnToAngle(double angle){
 		prevError = error;
 		prevTime = sylib::millis();
 
+		if(power > 100){
+			power = 100;
+		}
+		else if(power < -100){
+			power = -100;
+		}
+
 		leftDrive.move_velocity(-power);
 		rightDrive.move_velocity(power);
 
-		if(std::abs(error) < 1.5 && waitingForEnd){
+		if(std::abs(error) < 0.5 && waitingForEnd){
 			waitingForEnd = false;
 			endMovementTime = sylib::millis();
 		}
@@ -54,68 +125,29 @@ void turnToAngle(double angle){
 		if(!waitingForEnd && sylib::millis() - endMovementTime > 500){
 			endMovement = true;
 		}
-		printf("%f | %f\n", error, power);
 
 		sylib::delay(10);
 	}
-	printf("end\n");
 	leftDrive.move_velocity(0);
 	rightDrive.move_velocity(0);
 }
 
 void odomControlLoop(void * param){
 	static int ticks = 0;
-	
-	static double delta_left = 0;
-	static double delta_right = 0;
-	static double delta_theta = 0;
-    static int previous_left = leftRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
-    static int previous_right = rightRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
-    static double arc_radius = 0;
-    static double delta_local_y= 0;
 
-    static double delta_x = 0;
-    static double delta_y = 0;
-
-    int start_left = leftRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
+	int start_left = leftRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
     int start_right = rightRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
 
-
-
-	
 	while(true){
-		int current_left = leftRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
-		int current_right = rightRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
 		ticks++;
 
-		total_left = -(current_left - start_left);
-		total_right = (current_right - start_right);
-        
-
-        delta_left = current_left - previous_left;
-        delta_right = current_right - previous_right;
-        delta_theta = ((total_left - total_right)/TRACKING_WIDTH) - theta;
-
-		previous_left = current_left;
-		previous_right = current_right;
-
-		theta = theta + delta_theta;
-        
-        if(delta_theta != 0){
-            arc_radius = (delta_left+delta_right)/(2*delta_theta);
-        }
-    
-        delta_local_y = 2*sin(delta_theta/2) * arc_radius;
-
-        delta_y = delta_local_y * cos(theta);
-        delta_x = delta_local_y * sin(theta);
-
-        x_pos = x_pos + delta_x;
-        y_pos = y_pos + delta_y;
+		current_left = leftRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
+		current_right = rightRot.get_position()*WHEEL_DIAMETER*M_PI/86450;
+		
+		theta = (((current_left-start_left) - (current_right-start_right))/TRACKING_WIDTH);
 
         if(ticks%5 == 1){
-			printf("%d,%f,%f,%f\n",sylib::millis(), theta*180/M_PI, x_pos, y_pos);
-			// printf("%f\n", theta);
+			printf("%d,%f\n",sylib::millis(), theta*180/M_PI);
 		}
 		
 		sylib::delay(10);
