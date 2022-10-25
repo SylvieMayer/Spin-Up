@@ -46,9 +46,9 @@ def update_graph_live(n):
     # plot = px.scatter(x=rotated[0], y=[rotated[1], rotated[3], rotated[7]], height=800)
     # return plot
     
-    df = pandas.read_csv('data.csv',delimiter=',',names =['time (ms)','rot','left','right'],
+    df = pandas.read_csv('data.csv',delimiter=',',names =['time (ms)','frisbees in robo','theta target'],
                         skiprows=50,encoding='utf-16',skipfooter=50,engine='python')
-    plot = px.scatter(df,x='time (ms)',y=['rot','left','right'],height=800)
+    plot = px.scatter(df,x='time (ms)',y=['frisbees in robo'],height=800)
     return plot
 
     

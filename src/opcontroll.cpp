@@ -64,6 +64,7 @@ bool frisbeeInTrackPrevious = false;
 bool frisbeeLeftTrack = false;
 bool frisbeeEnteredTrack = false;
 int frisbeeEnteredTrackStartTime = 0;
+int frisbeesInIntakeAtShootTime = 0;
 
 int getFrisbeeState(){
     if(frisbeeEnteredTrack){
@@ -105,6 +106,7 @@ int frisbeeDetect(){
             pulseColor.h = std::rand() % 360;
             trackLighting.pulse(sylib::Addrled::hsv_to_rgb(pulseColor), 2, 35);
             frisbeeEnteredTrackStartTime = sylib::millis();
+            frisbeesInIntakeAtShootTime = getFrisbeesInIntake() - 1;
         }
         else{
             frisbeeEnteredTrack = false;
@@ -188,20 +190,35 @@ void flywheelCont()
 
 void intakeCont()
 {
-    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
-    {
+        
+    if(getFrisbeesInIntake() == 3){
+        trackLighting.set_all(0x730f00);
+    }
+    else if(getFrisbeesInIntake() == 2){
+        trackLighting.set_all(0x6b7300);
+    }
+    else if(getFrisbeesInIntake() == 1){
+        trackLighting.set_all(0x047500);
+    }
+    else if(getFrisbeesInIntake() == 0){
+        trackLighting.set_all(0x007575);
+    }
+    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
         intake.move_velocity(200);
-    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
-    {
-        if(sylib::millis()-frisbeeEnteredTrackStartTime >= 200 && sylib::millis()-frisbeeEnteredTrackStartTime <= 400){
+        if(getFrisbeesInIntake() == 3){
+            master.rumble(".");
+        }
+    } 
+    else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+        if(getFrisbeesInIntake() > 0 && getFrisbeesInIntake() == frisbeesInIntakeAtShootTime && sylib::millis() - frisbeeEnteredTrackStartTime >= 200 && sylib::millis() - frisbeeEnteredTrackStartTime < 400){
             intake.move_velocity(200);
         }
         else{
             intake.move_velocity(-200);
         }
         
-    } else 
-    {
+    } 
+    else{
         intake.move_velocity(0);
     }
     

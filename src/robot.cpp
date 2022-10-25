@@ -58,6 +58,7 @@ pros::ADIDigitalOut stringShooter(1, false);
 pros::ADIDigitalOut angler(4, false);
 pros::Distance indexerSensor(5);
 pros::Imu imu(2);
+pros::Optical rollerSensor(4);
 
 pros::Rotation leftRot(3);
 pros::Rotation rightRot(10);

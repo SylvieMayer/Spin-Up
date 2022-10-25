@@ -5,6 +5,7 @@
 #include "pros/imu.hpp"
 #include "pros/misc.hpp"
 #include "pros/motors.hpp"
+#include "pros/optical.hpp"
 #include "pros/rotation.hpp"
 
 extern pros::Controller master;
@@ -30,6 +31,7 @@ extern pros::ADIDigitalOut stringShooter;
 extern pros::ADIDigitalOut angler;
 extern pros::Distance indexerSensor;
 extern pros::IMU imu;
+extern pros::Optical rollerSensor;
 
 extern pros::Rotation leftRot;
 extern pros::Rotation rightRot;
@@ -49,7 +51,11 @@ void intakeCont();
 int frisbeeDetect();
 void odomControlLoop(void * param);
 void turnToAngle();
+int getFrisbeesInIntake();
+int getRollerColor();
 void auton1();
 
 //variables
 extern int flywheelRPMTarget;
+
+extern int frisbeeTrackLightingInitial;

@@ -110,6 +110,7 @@ void initialize(){
 	leftRot.reset_position();
 	rightRot.reset_position();
 	imu.reset();
+	rollerSensor.set_led_pwm(100);
 	pros::Task odomTask(odomControlLoop);
 
 }
@@ -120,6 +121,9 @@ void initialize(){
  * the robot is enabled, this task will exit.
  */
 void disabled() {
+	chassisLighting1.set_all(0x9e5f00);
+	chassisLighting2.set_all(0x9e5f00);
+	trackLighting.set_all(0x000000);
 	flywheel.stop();
 }
 
@@ -132,7 +136,11 @@ void disabled() {
  * This task will exit when the robot is enabled and autonomous or opcontrol
  * starts.
  */
-void competition_initialize() {}
+void competition_initialize() {
+	chassisLighting1.set_all(0x9e5f00);
+	chassisLighting2.set_all(0x9e5f00);
+	trackLighting.set_all(0x000000);
+}
 
 /**
  * Runs the user autonomous code. This function will be started in its own task
@@ -150,6 +158,9 @@ void competition_initialize() {}
 
 
 void autonomous() {
+	chassisLighting1.set_all(0x0da100);
+	chassisLighting2.set_all(0x0da100);
+	trackLighting.set_all(0x000000);
 	auton1();
 }
 
@@ -179,7 +190,9 @@ void opcontrol() {
 	uint32_t clock = sylib::millis();
 	while (true){
 		control_ticks++;
+		
 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+		
 		if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_L1) &&
 		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && 
 		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && 
@@ -206,7 +219,10 @@ void opcontrol() {
 		else if ((control_ticks) % 12 == 0) {
 				master.set_text(0,0,std::to_string(flyVel) + " | " + std::to_string(flyVelTarget)+ " | " + std::to_string(flyVelError) + "    ");
 		}
-		
+		if(control_ticks%5 == 0){
+			
+			
+		}
 		// odomControlLoop();
 		sylib::delay_until(&clock,10);
 	}
