@@ -1,5 +1,7 @@
 #include "main.h"
 #include "config.h"
+#include "pros/motors.h"
+#include "sylib/system.hpp"
 #include <cmath>
 /* 
     auton and auton specific functions will go here
@@ -29,6 +31,10 @@ void driveDistance(double target_distance){
 	double error = target_distance - current_avg;
 
 	double prevTime = sylib::millis();
+    int startTime = sylib::millis();
+
+    int cutoffTime = startTime + 500*target_distance/12;
+
 
     bool endMovement = false;
 	int endMovementTime = 0;
@@ -51,7 +57,7 @@ void driveDistance(double target_distance){
     double left_voltage = 0;
     double right_voltage = 0;
 
-	while(!endMovement){
+	while(!endMovement && sylib::millis() < cutoffTime){
 		theta_error = std::fmod(theta_target - theta, 360);
 		current_avg = ((current_left+current_right)/2.0 - start_avg) * WHEEL_DIAMETER * M_PI/86450;
 		error = target_distance - current_avg;
@@ -83,17 +89,17 @@ void driveDistance(double target_distance){
         left_voltage = (-power-turnCorrection)*55;
         right_voltage = (-power+turnCorrection)*55;
         if(left_voltage > 100){
-            left_voltage += 0;
+            left_voltage += 900;
         }
         else if(left_voltage < 100){
-            left_voltage -= 0;
+            left_voltage -= 900;
         }
 
         if(right_voltage > 100){
-            right_voltage += 0;
+            right_voltage += 900;
         }
         else if(right_voltage < 100){
-            right_voltage -= 0;
+            right_voltage -= 900;
         }
         
         moveChassis(left_voltage,right_voltage);
@@ -246,12 +252,19 @@ void shootSingleFrisbee(){
     if(getFrisbeesInIntake() == 0){
         return;
     }
-
+    double startTime = sylib::millis();
+    int frisbeesAtStart = getFrisbeesInIntake();
     int lightReading = frisbeeTrackSensor.get_value();
     int startReading = lightReading;
     bool frisbeeInTrack = false;
     intake.move_velocity(-200);
-    while(!frisbeeInTrack){
+    while(!frisbeeInTrack && sylib::millis() < startTime + 1800){
+        if(sylib::millis() > startTime + 1000 && sylib::millis() < startTime + 1300){
+            intake.move_velocity(200);
+        }
+        else{
+            intake.move_velocity(200);
+        }
         sylib::delay(10);
         lightReading = frisbeeTrackSensor.get_value();
         if(lightReading <= startReading*0.65){
@@ -319,9 +332,46 @@ void setRollerBlue(){
 }
 
 void auton1(){
-
-    sylib::delay(3000);
-    driveDistance(24);
+    sylib::delay(2000);
+    flywheel.set_velocity_custom_controller(3150);
+    moveChassis(1750, 1750);
+    sylib::delay(200);
+    intake.move_velocity(-50);
+    sylib::delay(350);
+    intake.move_velocity(100);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    driveDistance(3);
+    intake.move_velocity(0);
+    turnToAngle(45);
+    driveDistance(68);
+    turnToAngle(-48);
+    sylib::delay(500);
+    while(std::abs(flywheel.get_velocity_error()) > 50){
+        printf("%f\n", flywheel.get_velocity());
+        sylib::delay(10);
+    }
+    shootSingleFrisbee();
+    while(std::abs(flywheel.get_velocity_error()) > 50){
+        printf("%f\n", flywheel.get_velocity());
+        sylib::delay(10);
+    }
+    shootSingleFrisbee();
+    flywheel.set_velocity_custom_controller(0);
+    turnToAngle(45);
+    intake.move_velocity(200);
+    driveDistance(60);
+    turnToAngle(42);
+    driveDistance(12);
+    intake.move_velocity(0);
+    turnToAngle(-90);
+    moveChassis(2500, 2500);
     sylib::delay(1000);
-    turnToAngle(90);
+    intake.move_velocity(-50);
+    sylib::delay(400);
+    intake.move_velocity(0);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    driveDistance(3);
+
 }
