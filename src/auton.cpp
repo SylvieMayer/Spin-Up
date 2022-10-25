@@ -227,7 +227,7 @@ void odomControlLoop(void * param){
 }
 
 int getFrisbeesInIntake(){
-    int sensorDistance = indexerSensor.get();
+    int sensorDistance = distanceFilter.filter(indexerSensor.get());
     if(sensorDistance > 100){
         return 0;
     }
@@ -268,7 +268,8 @@ int getRollerColor(){
     if(rollerSensor.get_proximity() < 200){
         return 0;
     }
-    double hue = rollerSensor.get_hue();
+	
+    double hue = hueFilter.filter(rollerSensor.get_hue());
     if(hue < 260 && hue > 230){
         return 1; // blue
     }

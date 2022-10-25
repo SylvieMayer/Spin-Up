@@ -67,3 +67,6 @@ pros::Motor_Group leftDrive({leftDrive1, leftDrive2, leftDrive3});
 pros::Motor_Group rightDrive({rightDrive1, rightDrive2, rightDrive3});
 
 //sensors
+
+sylib::MedianFilter hueFilter(5,2,1);
+sylib::MedianFilter distanceFilter(5,2,1);

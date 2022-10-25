@@ -59,3 +59,6 @@ void auton1();
 extern int flywheelRPMTarget;
 
 extern int frisbeeTrackLightingInitial;
+
+extern sylib::MedianFilter hueFilter;
+extern sylib::MedianFilter distanceFilter;
