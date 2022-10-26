@@ -23,7 +23,7 @@ void moveChassis(double left, double right){
     rightDrive.move_voltage(right);
 }
 
-void driveDistance(double target_distance){
+void driveDistance(double target_distance, int timeout){
 	double start_avg = (current_left+current_right)/2.0;
 
 	current_avg = (current_left+current_right)/2.0 - start_avg;
@@ -33,7 +33,7 @@ void driveDistance(double target_distance){
 	double prevTime = sylib::millis();
     int startTime = sylib::millis();
 
-    int cutoffTime = startTime + 500*std::abs(target_distance)/12;
+    int cutoffTime = startTime + timeout;
 
 
     bool endMovement = false;
@@ -131,7 +131,7 @@ void driveDistance(double target_distance){
 	
 }
 
-void turnToAngle(double angle){
+void turnToAngle(double angle, int timeout){
 	theta_target = angle;
 	double error = std::fmod(theta_target - theta, 360);
 
@@ -147,7 +147,7 @@ void turnToAngle(double angle){
 
     int startTime = sylib::millis();
 
-    int cutoffTime = startTime + 10*std::abs(error);
+    int cutoffTime = startTime + timeout;
 
     bool withinErrorBounds = false;
     bool prev_withinErrorBounds = false;
@@ -344,18 +344,24 @@ void auton1(){
     intake.move_velocity(100);
     leftDrive.move_velocity(0);
     rightDrive.move_velocity(0);
-    driveDistance(4);
+
+
+    driveDistance(3,500);
     intake.move_velocity(0);
-    turnToAngle(45);
-    driveDistance(68);
-    turnToAngle(-38);
+
+
+    turnToAngle(90,750);
+    driveDistance(52,2500);
+    turnToAngle(0,750);
+	driveDistance(52,2500);
+	turnToAngle(-45,500);
+
     while(std::abs(flywheel.get_velocity_error()) > 30){
         printf("%f\n", flywheel.get_velocity());
         sylib::delay(10);
     }
-    sylib::delay(200);
     shootSingleFrisbee();
-    flywheel.set_velocity_custom_controller(3250);
+
     sylib::delay(200);
     while(std::abs(flywheel.get_velocity_error()) > 30){
         printf("%f\n", flywheel.get_velocity());
@@ -363,13 +369,10 @@ void auton1(){
     }
     shootSingleFrisbee();
     flywheel.set_velocity_custom_controller(0);
-    turnToAngle(60);
-    // intake.move_velocity(200);
-    driveDistance(48);
-    // intake.move_velocity(200);
-    turnToAngle(0);
-    driveDistance(42);
-    turnToAngle(-90);
+    turnToAngle(45,500);
+    intake.move_velocity(200);
+    driveDistance(62,2500);
+    turnToAngle(-90,750);
     intake.move_velocity(0);
     moveChassis(3000, 3000);
     sylib::delay(500);
@@ -379,6 +382,6 @@ void auton1(){
     intake.move_velocity(0);
     leftDrive.move_velocity(0);
     rightDrive.move_velocity(0);
-    driveDistance(3);
+    driveDistance(3,500);
 
 }
