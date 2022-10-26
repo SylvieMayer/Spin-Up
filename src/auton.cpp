@@ -33,7 +33,7 @@ void driveDistance(double target_distance){
 	double prevTime = sylib::millis();
     int startTime = sylib::millis();
 
-    int cutoffTime = startTime + 500*target_distance/12;
+    int cutoffTime = startTime + 500*std::abs(target_distance)/12;
 
 
     bool endMovement = false;
@@ -145,13 +145,17 @@ void turnToAngle(double angle){
 	bool endMovement = false;
 	int endMovementTime = 0;
 
+    int startTime = sylib::millis();
+
+    int cutoffTime = startTime + 10*std::abs(error);
+
     bool withinErrorBounds = false;
     bool prev_withinErrorBounds = false;
 
     double left_voltage = 0;
     double right_voltage = 0;
 
-	while(!endMovement){
+	while(!endMovement && sylib::millis() < cutoffTime){
 		error = std::fmod(theta_target - theta, 360);
 		power = error * kP;
 		power += ((error-prevError)/(sylib::millis()-prevTime)) * kD;
@@ -237,10 +241,10 @@ int getFrisbeesInIntake(){
     if(sensorDistance > 100){
         return 0;
     }
-    else if(sensorDistance > 60){
+    else if(sensorDistance > 55){
         return 1;
     }
-    else if(sensorDistance > 40){
+    else if(sensorDistance > 35){
         return 2;
     }
     else{
@@ -258,12 +262,12 @@ void shootSingleFrisbee(){
     int startReading = lightReading;
     bool frisbeeInTrack = false;
     intake.move_velocity(-200);
-    while(!frisbeeInTrack && sylib::millis() < startTime + 1800){
-        if(sylib::millis() > startTime + 1000 && sylib::millis() < startTime + 1300){
+    while(!frisbeeInTrack && sylib::millis() < startTime + 1500){ // 
+        if(sylib::millis() > startTime + 500 && sylib::millis() < startTime + 750){
             intake.move_velocity(200);
         }
         else{
-            intake.move_velocity(200);
+            intake.move_velocity(-200);
         }
         sylib::delay(10);
         lightReading = frisbeeTrackSensor.get_value();
@@ -273,7 +277,7 @@ void shootSingleFrisbee(){
         
     }
     intake.move_velocity(-200);
-    sylib::delay(200);
+    sylib::delay(50);
     intake.move_velocity(0);
 }
 
@@ -332,43 +336,46 @@ void setRollerBlue(){
 }
 
 void auton1(){
-    sylib::delay(2000);
-    flywheel.set_velocity_custom_controller(3150);
-    moveChassis(1750, 1750);
+    flywheel.set_velocity_custom_controller(3250);
+    moveChassis(2250, 2250);
     sylib::delay(200);
-    intake.move_velocity(-50);
+    intake.move_velocity(-75);
     sylib::delay(350);
     intake.move_velocity(100);
     leftDrive.move_velocity(0);
     rightDrive.move_velocity(0);
-    driveDistance(3);
+    driveDistance(4);
     intake.move_velocity(0);
     turnToAngle(45);
     driveDistance(68);
-    turnToAngle(-48);
-    sylib::delay(500);
-    while(std::abs(flywheel.get_velocity_error()) > 50){
+    turnToAngle(-38);
+    while(std::abs(flywheel.get_velocity_error()) > 30){
         printf("%f\n", flywheel.get_velocity());
         sylib::delay(10);
     }
+    sylib::delay(200);
     shootSingleFrisbee();
-    while(std::abs(flywheel.get_velocity_error()) > 50){
+    flywheel.set_velocity_custom_controller(3250);
+    sylib::delay(200);
+    while(std::abs(flywheel.get_velocity_error()) > 30){
         printf("%f\n", flywheel.get_velocity());
         sylib::delay(10);
     }
     shootSingleFrisbee();
     flywheel.set_velocity_custom_controller(0);
-    turnToAngle(45);
-    intake.move_velocity(200);
-    driveDistance(60);
-    turnToAngle(42);
-    driveDistance(12);
-    intake.move_velocity(0);
+    turnToAngle(60);
+    // intake.move_velocity(200);
+    driveDistance(48);
+    // intake.move_velocity(200);
+    turnToAngle(0);
+    driveDistance(42);
     turnToAngle(-90);
-    moveChassis(2500, 2500);
-    sylib::delay(1000);
-    intake.move_velocity(-50);
-    sylib::delay(400);
+    intake.move_velocity(0);
+    moveChassis(3000, 3000);
+    sylib::delay(500);
+
+    intake.move_velocity(-75);
+    sylib::delay(350);
     intake.move_velocity(0);
     leftDrive.move_velocity(0);
     rightDrive.move_velocity(0);

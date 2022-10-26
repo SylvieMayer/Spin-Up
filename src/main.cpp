@@ -186,7 +186,7 @@ void opcontrol() {
 	int flyVel = 0;
 	int flyVelTarget = 0;
 	int flyVelError = 0;
-
+	chassis_light_default();
 	uint32_t clock = sylib::millis();
 	while (true){
 		control_ticks++;
