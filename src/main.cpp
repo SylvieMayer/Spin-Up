@@ -161,7 +161,7 @@ void autonomous() {
 	chassisLighting1.set_all(0x0da100);
 	chassisLighting2.set_all(0x0da100);
 	trackLighting.set_all(0x000000);
-	auton1();
+	auton2();
 }
 
 /**

@@ -54,6 +54,7 @@ void turnToAngle();
 int getFrisbeesInIntake();
 int getRollerColor();
 void auton1();
+void auton2();
 
 //variables
 extern int flywheelRPMTarget;

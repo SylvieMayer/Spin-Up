@@ -20,12 +20,12 @@ int flywheelRPMTarget = 0;
 void drive(double left, double right){
     left = left*100;
     right = right*100;
-    if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)){
-        leftDrive.move_voltage(12000 * .8);
-        rightDrive.move_voltage(12000 * .8);
-    } else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)){
-        leftDrive.move_voltage(-12000 * .8);
-        rightDrive.move_voltage(-12000 * .8);
+    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
+        leftDrive.move_velocity(-125);
+        rightDrive.move_velocity(-125);
+    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
+        leftDrive.move_velocity(125);
+        rightDrive.move_velocity(125);
     } else {    
     if (std::abs(left) > deadzone){
       real_left=-left*1.05 + 5;
@@ -152,11 +152,11 @@ void flywheelCont()
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
         {
-            flywheelRPMTarget = 2700;
+            flywheelRPMTarget = 2300;
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
         {
-            flywheelRPMTarget = 3150;
+            flywheelRPMTarget = 26000;
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
@@ -203,7 +203,13 @@ void intakeCont()
     else if(getFrisbeesInIntake() == 0){
         trackLighting.set_all(0x007575);
     }
-    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
+    if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
+        intake.move_velocity(75);
+    }
+    else if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+        intake.move_velocity(-75);
+    }
+    else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
         intake.move_velocity(200);
         if(getFrisbeesInIntake() == 3){
             master.rumble(".");
