@@ -349,15 +349,31 @@ void auton2(){
         }
         shootSingleFrisbee();
     }
-    turnToAngle(135,1000);
+    turnToAngle(132,1000);
     if(getFrisbeesInIntake() < 3){
         intake.move_voltage(12000);
     }
     else{
         intake.move_voltage(0);
     }
-    driveDistance(60, 6000, 75);
+    driveDistance(25, 3000, 75);
+    if(getFrisbeesInIntake() < 3){
+        intake.move_voltage(12000);
+    }
+    else{
+        intake.move_voltage(0);
+    }
+    driveDistance(25, 3000, 75);
+    if(getFrisbeesInIntake() < 3){
+        intake.move_voltage(12000);
+    }
+    else{
+        intake.move_voltage(0);
+    }
+    driveDistance(25, 3000, 75);
     turnToAngle(0,1500);
+
+
 }
 
 void auton1(){

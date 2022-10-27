@@ -3,6 +3,7 @@
 #include "pros/misc.h"
 #include "pros/rtos.hpp"
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <string>
@@ -20,13 +21,7 @@ int flywheelRPMTarget = 0;
 void drive(double left, double right){
     left = left*100;
     right = right*100;
-    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
-        leftDrive.move_velocity(-125);
-        rightDrive.move_velocity(-125);
-    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
-        leftDrive.move_velocity(125);
-        rightDrive.move_velocity(125);
-    } else {    
+   
     if (std::abs(left) > deadzone){
       real_left=-left*1.05 + 5;
       leftDrive.move_voltage(real_left*120);
@@ -34,13 +29,13 @@ void drive(double left, double right){
     else {
       leftDrive.move_velocity(0);
     }
+
     if (std::abs(right) > deadzone){
       real_right=-right*1.05 + 5;
       rightDrive.move_voltage(real_right*120);
     }
     else{
       rightDrive.move_velocity(0);
-    }
     }
 }
 std::uint32_t oldTime = 0;
@@ -142,8 +137,49 @@ void flywheelCont()
 {
     //update button placement later
     if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
-        flywheel.set_voltage(5000);
-        return;
+        if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)){
+            angler.set_value(true);
+        }
+        if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)){
+            angler.set_value(false);
+        }
+
+
+        if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)){
+            flywheelRPMTarget = 0;
+            flywheel.set_velocity_custom_controller(flywheelRPMTarget); 
+            return;
+        }
+        else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_B)){
+            
+            if(std::abs(flywheel.get_velocity_error()) < 100){
+                flywheel.set_voltage(5000);
+            }
+            return;
+        }
+
+        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A))
+        {
+            flywheelRPMTarget = 2000;
+        }
+        else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
+        {
+            flywheelRPMTarget = 2600;
+        }
+        else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
+        {
+            flywheelRPMTarget = 3200;
+        }
+        else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
+        {
+            flywheelRPMTarget = 3000;
+        }
+        else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)){
+            flywheelRPMTarget += 200;
+        }
+        else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)){
+            flywheelRPMTarget -= 200;
+        }
     }
     else{
         if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A))
@@ -152,18 +188,18 @@ void flywheelCont()
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
         {
-            flywheelRPMTarget = 2300;
+            flywheelRPMTarget = 2400;
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
         {
-            flywheelRPMTarget = 26000;
+            flywheelRPMTarget = 3600;
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
-            flywheelRPMTarget = 3600;
+            flywheelRPMTarget = 2800;
         }
         else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){
-            flywheelRPMTarget = 4000;
+            flywheelRPMTarget = 5000;
         }
         else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)){
             flywheelRPMTarget += 50;
@@ -171,6 +207,9 @@ void flywheelCont()
         else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)){
             flywheelRPMTarget -= 50;
         }
+    }
+    
+    if(flywheelRPMTarget > 0){
         frisbeeDetect();
 
         if((sylib::millis() - frisbeeEnteredTrackStartTime <= 500) && flywheelRPMTarget > 500){
@@ -180,6 +219,7 @@ void flywheelCont()
             flywheel.set_velocity_custom_controller(flywheelRPMTarget); 
         }
     }
+
     if(partner.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)){
         angler.set_value(true);
     }
@@ -204,10 +244,16 @@ void intakeCont()
         trackLighting.set_all(0x007575);
     }
     if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
-        intake.move_velocity(75);
+        intake.move_velocity(100);
     }
     else if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
-        intake.move_velocity(-75);
+        intake.move_velocity(-100);
+    }
+    else if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
+        intake.move_voltage(12000);
+    }
+    else if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+        intake.move_voltage(-12000);
     }
     else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
         intake.move_velocity(200);

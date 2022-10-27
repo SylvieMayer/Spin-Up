@@ -191,20 +191,43 @@ void opcontrol() {
 	while (true){
 		control_ticks++;
 		
-		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
-		
-		if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_L1) &&
-		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && 
-		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && 
-		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
-
-			stringShooter.set_value(true);
+		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){ // SHIFT KEY
+			if(master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
+				leftDrive.move_velocity(125);
+				rightDrive.move_velocity(-125);
+			}
+			else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
+        		leftDrive.move_velocity(125);
+        		rightDrive.move_velocity(125);
+			}
+			else{
+				drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+			}
 		}
 		else{
-			
+			drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+
 		}
-		flywheelCont();
-		intakeCont();
+		
+		
+		if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT) &&
+		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT) && 
+		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_A) && 
+		   partner.get_digital(pros::E_CONTROLLER_DIGITAL_Y)){
+			
+			if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) &&
+		   	   master.get_digital(pros::E_CONTROLLER_DIGITAL_R1) && 
+		       master.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && 
+		       master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+
+				stringShooter.set_value(true);
+		   }
+		}
+		else{
+			flywheelCont();
+			intakeCont();
+		}
+		
 		chassis_light_control();
 
 		flyVel = (int)flywheel.get_velocity();
