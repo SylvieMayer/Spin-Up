@@ -23,7 +23,7 @@ pros::Controller partner(pros::E_CONTROLLER_PARTNER);
 
 
 sylib::SpeedControllerInfo flywheelController (
-        [](double rpm){return std::pow(M_E, (-0.001*rpm* 3600 / 3600 + 1)) + 3.1;}, // kV function
+        [](double rpm){return std::pow(M_E, (-0.001*rpm* 3600 / 3600 + 1)) + 3.065;}, // kV function
         10, // kP
         0.001, // kI
         0, // kD
