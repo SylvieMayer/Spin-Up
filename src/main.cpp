@@ -192,8 +192,12 @@ void opcontrol() {
 		control_ticks++;
 		
 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){ // SHIFT KEY
+			drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+
+		}
+		else{
 			if(master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
-				leftDrive.move_velocity(125);
+				leftDrive.move_velocity(-125);
 				rightDrive.move_velocity(-125);
 			}
 			else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
@@ -203,10 +207,6 @@ void opcontrol() {
 			else{
 				drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
 			}
-		}
-		else{
-			drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
-
 		}
 		
 		
@@ -242,9 +242,9 @@ void opcontrol() {
 		else if ((control_ticks) % 12 == 0) {
 				master.set_text(0,0,std::to_string(flyVel) + " | " + std::to_string(flyVelTarget)+ " | " + std::to_string(flyVelError) + "    ");
 		}
-		if(control_ticks%5 == 0){
+		if(control_ticks%1 == 0){
 			
-			
+			printf("%d,%f,%f,%d\n", sylib::millis(), flywheel.get_velocity_target(), flywheel.get_velocity(),flywheel.get_applied_voltage());
 		}
 		// odomControlLoop();
 		sylib::delay_until(&clock,10);

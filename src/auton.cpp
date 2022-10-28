@@ -252,7 +252,7 @@ int getFrisbeesInIntake(){
     }
 }
 
-void shootSingleFrisbee(){
+void shootSingleFrisbee(int speedAfter){
     if(getFrisbeesInIntake() == 0){
         return;
     }
@@ -273,12 +273,14 @@ void shootSingleFrisbee(){
         lightReading = frisbeeTrackSensor.get_value();
         if(lightReading <= startReading*0.65){
             frisbeeInTrack = true;
+            flywheel.set_voltage(-12000);
         }
         
     }
     intake.move_velocity(-200);
-    sylib::delay(50);
+    sylib::delay(250);
     intake.move_velocity(0);
+    flywheel.set_velocity_custom_controller(speedAfter);
 }
 
 int getRollerColor(){
@@ -344,10 +346,9 @@ void auton2(){
     for(int i = 0; i < numToShoot1; i++){
         sylib::delay(750);
         while(std::abs(flywheel.get_velocity_error()) > 30){
-            printf("%f\n", flywheel.get_velocity());
             sylib::delay(10);
         }
-        shootSingleFrisbee();
+        shootSingleFrisbee(3300);
     }
     turnToAngle(132,1000);
     if(getFrisbeesInIntake() < 3){
@@ -401,14 +402,14 @@ void auton1(){
         printf("%f\n", flywheel.get_velocity());
         sylib::delay(10);
     }
-    shootSingleFrisbee();
+    shootSingleFrisbee(3225);
 
     sylib::delay(1000);
     while(std::abs(flywheel.get_velocity_error()) > 30){
         printf("%f\n", flywheel.get_velocity());
         sylib::delay(10);
     }
-    shootSingleFrisbee();
+    shootSingleFrisbee(3225);
     flywheel.set_velocity_custom_controller(0);
     turnToAngle(39,500);
     sylib::delay(1000);

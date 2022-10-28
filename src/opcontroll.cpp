@@ -145,12 +145,12 @@ void flywheelCont()
         }
 
 
-        if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)){
+        if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)){
             flywheelRPMTarget = 0;
             flywheel.set_velocity_custom_controller(flywheelRPMTarget); 
             return;
         }
-        else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_B)){
+        else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)){
             
             if(std::abs(flywheel.get_velocity_error()) < 100){
                 flywheel.set_voltage(5000);
@@ -209,10 +209,10 @@ void flywheelCont()
         }
     }
     
-    if(flywheelRPMTarget > 0){
+    if(flywheelRPMTarget > -10){
         frisbeeDetect();
 
-        if((sylib::millis() - frisbeeEnteredTrackStartTime <= 500) && flywheelRPMTarget > 500){
+        if((sylib::millis() - frisbeeEnteredTrackStartTime <= 750) && flywheelRPMTarget > 0){
             flywheel.set_voltage(-12000);
         }
         else{
