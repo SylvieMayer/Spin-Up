@@ -345,7 +345,7 @@ void setRollerBlue(){
 }
 
 void farSideHalfWP(){
-    flywheel.set_velocity_custom_controller(3450);
+    flywheel.set_velocity_custom_controller(3500);
     intake.move_voltage(12000);
     driveDistance(40,3000, 125);
     turnToAngle(37.5, 500);
@@ -354,10 +354,10 @@ void farSideHalfWP(){
     int frisbeesAtStart = getFrisbeesInIntake();
     for(int i = 0;i < frisbeesAtStart-1; i++){
 
-        while(std::abs(flywheel.get_velocity_error()) > 60){
+        while(std::abs(flywheel.get_velocity_error()) > 30){
             sylib::delay(10);
         }
-        flywheel.set_velocity_custom_controller(3450);
+        flywheel.set_velocity_custom_controller(3400);
 
         shootSingleFrisbee(3600);
         angler.set_value(false);
