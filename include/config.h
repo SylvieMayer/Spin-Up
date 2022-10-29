@@ -53,8 +53,8 @@ void odomControlLoop(void * param);
 void turnToAngle();
 int getFrisbeesInIntake();
 int getRollerColor();
-void auton1();
-void auton2();
+void spinCloseRoller();
+void farSideHalfWP();
 
 //variables
 extern int flywheelRPMTarget;

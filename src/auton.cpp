@@ -230,9 +230,18 @@ void odomControlLoop(void * param){
 		current_right = rightRot.get_position();
 		
 		theta = (WHEEL_DIAMETER*((current_left-start_left) - (current_right-start_right))/(TRACKING_WIDTH))*(180.0/86450.0);
-        if ((ticks) % 12 == 0) {
-				master.set_text(0,0,std::to_string((int)flywheel.get_velocity()) + " | " + std::to_string((int)flywheel.get_velocity_target())+ " | " + std::to_string((int)flywheel.get_velocity_error()) + "    ");
-		}
+        if(getFrisbeesInIntake() == 3){
+            trackLighting.set_all(0x730f00);
+        }
+        else if(getFrisbeesInIntake() == 2){
+            trackLighting.set_all(0x6b7300);
+        }
+        else if(getFrisbeesInIntake() == 1){
+            trackLighting.set_all(0x047500);
+        }
+        else if(getFrisbeesInIntake() == 0){
+            trackLighting.set_all(0x007575);
+        }
 		sylib::delay(10);
 	}
 }
@@ -335,7 +344,7 @@ void setRollerBlue(){
     intake.move_velocity(0);
 }
 
-void auton2(){
+void farSideHalfWP(){
     flywheel.set_velocity_custom_controller(3450);
     intake.move_voltage(12000);
     driveDistance(40,3000, 125);
@@ -355,19 +364,18 @@ void auton2(){
         sylib::delay(200);
     }
     intake.move_velocity(-200);
-    sylib::delay(1500);
+    sylib::delay(1300);
     intake.move_velocity(0);
 
     turnToAngle(133,1000);
-    flywheel.set_velocity_custom_controller(3600);
+    flywheel.set_velocity_custom_controller(3700);
     if(getFrisbeesInIntake() < 3){
         intake.move_voltage(12000);
     }
     else{
         intake.move_voltage(0);
     }
-    flywheel.set_voltage(-12000);
-    driveDistance(58, 3000, 150);
+    driveDistance(57, 3000, 150);
     angler.set_value(false);
     turnToAngle(3,800);
     intake.move_velocity(0);
@@ -388,64 +396,23 @@ void auton2(){
     for(int i = 0;i < 5; i++){
         sylib::delay(200);
         intake.move_velocity(-200);
-        sylib::delay(600);
+        sylib::delay(1000);
         intake.move_velocity(200);
 
     }
-    
-    // sylib::delay(1000);
-    // flywheel.set_velocity_custom_controller(0);
 
 }
 
-void auton1(){
-    flywheel.set_velocity_custom_controller(3225);
+void spinCloseRoller(){
     moveChassis(2250, 2250);
     sylib::delay(200);
     intake.move_velocity(-75);
     sylib::delay(350);
-    intake.move_velocity(100);
+    intake.move_velocity(0);
     leftDrive.move_velocity(0);
     rightDrive.move_velocity(0);
 
 
     driveDistance(3,500);
     intake.move_velocity(0);
-
-
-    turnToAngle(90,750);
-    driveDistance(42,2500);
-    turnToAngle(0,750);
-	driveDistance(43,2500);
-	turnToAngle(-40,500);
-    sylib::delay(750);
-    while(std::abs(flywheel.get_velocity_error()) > 30){
-        printf("%f\n", flywheel.get_velocity());
-        sylib::delay(10);
-    }
-    shootSingleFrisbee(3225);
-
-    sylib::delay(1000);
-    while(std::abs(flywheel.get_velocity_error()) > 30){
-        printf("%f\n", flywheel.get_velocity());
-        sylib::delay(10);
-    }
-    shootSingleFrisbee(3225);
-    flywheel.set_velocity_custom_controller(0);
-    turnToAngle(39,500);
-    sylib::delay(1000);
-    intake.move_voltage(12000);
-    driveDistance(80,2500, 100);
-    turnToAngle(-90,750);
-    intake.move_velocity(0);
-    moveChassis(3000, 3000);
-    sylib::delay(500);
-
-    intake.move_velocity(-75);
-    sylib::delay(350);
-    intake.move_velocity(0);
-    leftDrive.move_velocity(0);
-    rightDrive.move_velocity(0);
-    driveDistance(3,500);
-
 }

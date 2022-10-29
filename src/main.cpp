@@ -25,6 +25,8 @@
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+const int autonRoutine = 1;
+
 
 double actualCurrentLimit(double temperature){
     double currentLimit;
@@ -46,10 +48,10 @@ double actualCurrentLimit(double temperature){
     return currentLimit;
 }
 
-const int CHASSIS_COLOR_START = 0x440044;
-const int CHASSIS_COLOR_END = 0x004444;
-// const int CHASSIS_COLOR_START = 0xFF00FF;
-// const int CHASSIS_COLOR_END = 0x00FFFF;
+// const int CHASSIS_COLOR_START = 0x440044;
+// const int CHASSIS_COLOR_END = 0x004444;
+const int CHASSIS_COLOR_START = 0xFF00FF;
+const int CHASSIS_COLOR_END = 0x00FFFF;
 
 void chassis_light_default(){
 	chassisLighting1.gradient(CHASSIS_COLOR_START, CHASSIS_COLOR_END, 0, 0, true, true);
@@ -122,8 +124,9 @@ void initialize(){
  * the robot is enabled, this task will exit.
  */
 void disabled() {
-	chassisLighting1.set_all(0x9e5f00);
-	chassisLighting2.set_all(0x9e5f00);
+
+	chassisLighting1.set_all(0xfa8b02);
+	chassisLighting2.set_all(0xfa8b02);
 	trackLighting.set_all(0x000000);
 	flywheel.stop();
 }
@@ -138,9 +141,17 @@ void disabled() {
  * starts.
  */
 void competition_initialize() {
-	chassisLighting1.set_all(0x9e5f00);
-	chassisLighting2.set_all(0x9e5f00);
-	trackLighting.set_all(0x000000);
+	if(autonRoutine == 1){
+		chassisLighting1.set_all(0xab03ff);
+		chassisLighting2.set_all(0xab03ff);
+		trackLighting.set_all(0x000000);
+	}
+	else if(autonRoutine == 2){
+		chassisLighting1.set_all(0x00fcd2);
+		chassisLighting2.set_all(0x00fcd2);
+		trackLighting.set_all(0x000000);
+	}
+	
 }
 
 /**
@@ -157,12 +168,20 @@ void competition_initialize() {
 
 
 
-
 void autonomous() {
-	chassisLighting1.set_all(0x0da100);
-	chassisLighting2.set_all(0x0da100);
+	chassisLighting1.set_all(0x00ff00);
+	chassisLighting2.set_all(0x00ff00);
 	trackLighting.set_all(0x000000);
-	auton2();
+	if(autonRoutine==1){
+		farSideHalfWP();
+	}
+	else if(autonRoutine == 2){
+		spinCloseRoller();
+	}
+	else{
+		trackLighting.set_all(0xee03ff);
+	}
+	
 }
 
 /**
@@ -188,6 +207,8 @@ void opcontrol() {
 	int flyVelTarget = 0;
 	int flyVelError = 0;
 	chassis_light_default();
+	angler.set_value(true);
+	flywheelRPMTarget = 2600;
 	uint32_t clock = sylib::millis();
 	while (true){
 		control_ticks++;
