@@ -137,6 +137,7 @@ void flywheelCont()
 {
     //update button placement later
     if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+        //shift state
         if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)){
             angler.set_value(true);
         }
@@ -158,30 +159,21 @@ void flywheelCont()
             return;
         }
 
-        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A))
-        {
-            flywheelRPMTarget = 2000;
-        }
-        else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
-        {
-            flywheelRPMTarget = 2600;
-        }
-        else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
-        {
-            flywheelRPMTarget = 3200;
-        }
-        else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
+        if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
         {
             flywheelRPMTarget = 3000;
         }
-        else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)){
-            flywheelRPMTarget += 200;
+        else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
+        {
+            flywheelRPMTarget = 3600;
         }
-        else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)){
-            flywheelRPMTarget -= 200;
+        else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
+        {
+            flywheelRPMTarget = 3300;
         }
     }
     else{
+        //unshifted state
         if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A))
         {
             flywheelRPMTarget = 0;
@@ -192,11 +184,11 @@ void flywheelCont()
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
         {
-            flywheelRPMTarget = 3600;
+            flywheelRPMTarget = 2800;
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
-            flywheelRPMTarget = 2800;
+            flywheelRPMTarget = 2600;
         }
         else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){
             flywheelRPMTarget = 5000;

@@ -1,6 +1,7 @@
 #include "main.h"
 #include "config.h"
 #include "pros/adi.hpp"
+#include "pros/misc.h"
 #include "pros/rtos.hpp"
 #include "sylib/system.hpp"
 #include <cmath>
@@ -192,8 +193,17 @@ void opcontrol() {
 		control_ticks++;
 		
 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){ // SHIFT KEY
+		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)){
+			leftDrive.move_velocity(125);
+			rightDrive.move_velocity(-125);
+		}
+		else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)){
+			leftDrive.move_velocity(-125);
+			rightDrive.move_velocity(125);
+		}
+		else{
 			drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
-
+		}
 		}
 		else{
 			if(master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
