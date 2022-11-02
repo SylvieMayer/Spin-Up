@@ -151,7 +151,11 @@ void competition_initialize() {
 		chassisLighting2.set_all(0x00fcd2);
 		trackLighting.set_all(0x000000);
 	}
-	
+	else if(autonRoutine == 3){
+		chassisLighting1.set_all(0xff55d2);
+		chassisLighting2.set_all(0xff55d2);
+		trackLighting.set_all(0x000000);
+	}
 }
 
 /**
@@ -177,6 +181,9 @@ void autonomous() {
 	}
 	else if(autonRoutine == 2){
 		spinCloseRoller();
+	}
+	else if(autonRoutine == 3){
+		skillsAuto();
 	}
 	else{
 		trackLighting.set_all(0xee03ff);
@@ -208,7 +215,7 @@ void opcontrol() {
 	int flyVelError = 0;
 	chassis_light_default();
 	angler.set_value(true);
-	flywheelRPMTarget = 2600;
+	flywheelRPMTarget = 2250;
 	uint32_t clock = sylib::millis();
 	while (true){
 		control_ticks++;

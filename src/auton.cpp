@@ -345,11 +345,11 @@ void setRollerBlue(){
 }
 
 void farSideHalfWP(){
-    flywheel.set_velocity_custom_controller(3500);
+    flywheel.set_velocity_custom_controller(3200);
     intake.move_voltage(12000);
     driveDistance(40,3000, 125);
-    turnToAngle(37.5, 500);
-    driveDistance(6, 750);
+    turnToAngle(35, 500);
+    driveDistance(5, 750);
     sylib::delay(1000);
     int frisbeesAtStart = getFrisbeesInIntake();
     for(int i = 0;i < frisbeesAtStart-1; i++){
@@ -357,9 +357,9 @@ void farSideHalfWP(){
         while(std::abs(flywheel.get_velocity_error()) > 30){
             sylib::delay(10);
         }
-        flywheel.set_velocity_custom_controller(3400);
+        flywheel.set_velocity_custom_controller(3200);
 
-        shootSingleFrisbee(3600);
+        shootSingleFrisbee(3200);
         angler.set_value(false);
         sylib::delay(200);
     }
@@ -367,8 +367,8 @@ void farSideHalfWP(){
     sylib::delay(1300);
     intake.move_velocity(0);
 
-    turnToAngle(133,1000);
-    flywheel.set_velocity_custom_controller(3700);
+    turnToAngle(130,1000);
+    flywheel.set_velocity_custom_controller(3500);
     if(getFrisbeesInIntake() < 3){
         intake.move_voltage(12000);
     }
@@ -387,7 +387,7 @@ void farSideHalfWP(){
     rightDrive.move_velocity(0);
     driveDistance(2,500);
     intake.move_velocity(200);
-    turnToAngle(10, 500);
+    turnToAngle(5, 500);
     sylib::delay(400);
     intake.move_velocity(0);
     frisbeesAtStart = getFrisbeesInIntake();
@@ -415,4 +415,81 @@ void spinCloseRoller(){
 
     driveDistance(3,500);
     intake.move_velocity(0);
+}
+
+
+void skillsAuto(){
+    flywheel.set_velocity_custom_controller(3450);
+    intake.move_voltage(12000);
+    driveDistance(40,3000, 125);
+    turnToAngle(35, 500);
+    driveDistance(5, 750);
+    sylib::delay(1000);
+    int frisbeesAtStart = getFrisbeesInIntake();
+    for(int i = 0;i < frisbeesAtStart-1; i++){
+
+        while(std::abs(flywheel.get_velocity_error()) > 30){
+            sylib::delay(10);
+        }
+        flywheel.set_velocity_custom_controller(3100);
+
+        shootSingleFrisbee(3600);
+        angler.set_value(false);
+        sylib::delay(200);
+    }
+    intake.move_velocity(-200);
+    sylib::delay(1300);
+    intake.move_velocity(0);
+
+    turnToAngle(130,1000);
+    flywheel.set_velocity_custom_controller(3300);
+    if(getFrisbeesInIntake() < 3){
+        intake.move_voltage(12000);
+    }
+    else{
+        intake.move_voltage(0);
+    }
+    driveDistance(57, 3000, 150);
+    angler.set_value(false);
+    turnToAngle(3,800);
+    intake.move_velocity(0);
+    moveChassis(3550, 3550);
+    sylib::delay(500);
+    intake.move_velocity(-150);
+    sylib::delay(500);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    driveDistance(2,500);
+    intake.move_velocity(200);
+    turnToAngle(5, 500);
+    sylib::delay(400);
+    intake.move_velocity(0);
+    frisbeesAtStart = getFrisbeesInIntake();
+    sylib::delay(500);
+
+    for(int i = 0;i < 5; i++){
+        sylib::delay(200);
+        intake.move_velocity(-200);
+        sylib::delay(1000);
+        intake.move_velocity(200);
+
+    }
+    driveDistance(15, 2000);
+    turnToAngle(-90, 900);
+    driveDistance(-20, 5000,100);
+
+    moveChassis(3550, 3550);
+    sylib::delay(500);
+    intake.move_velocity(-150);
+    sylib::delay(500);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    driveDistance(2,500);
+    intake.move_velocity(0);
+
+    turnToAngle(-45,600);
+    driveDistance(12, 600);
+    stringShooter.set_value(true);
+    driveDistance(-24, 2000);
+    driveDistance(4, 500);
 }
