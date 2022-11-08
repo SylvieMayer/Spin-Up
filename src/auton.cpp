@@ -262,7 +262,7 @@ int getFrisbeesInIntake(){
     }
 }
 
-void shootSingleFrisbee(int speedAfter){
+void shootSingleFrisbee(int cutoffMs){
     if(getFrisbeesInIntake() == 0){
         return;
     }
@@ -273,15 +273,13 @@ void shootSingleFrisbee(int speedAfter){
     bool frisbeeInTrack = false;
     intake.move_voltage(-12000);
     trackLighting.set_all(0x444400);
-    sylib::delay(250);
-    while(!frisbeeInTrack && sylib::millis() < startTime + 750){ // 
+    while(!frisbeeInTrack && sylib::millis() < startTime + cutoffMs){ // 
         lightReading = frisbeeTrackSensor.get_value();
         if(lightReading <= startReading*0.65){
             frisbeeInTrack = true;
             // flywheel.set_voltage(-12000);
         }  
         sylib::delay(10);
-
     }
     trackLighting.set_all(0x004444);
     intake.move_velocity(200);
@@ -359,7 +357,7 @@ void farSideHalfWP(){
         }
         flywheel.set_velocity_custom_controller(3450);
 
-        shootSingleFrisbee(3600);
+        shootSingleFrisbee();
         angler.set_value(false);
         sylib::delay(200);
     }

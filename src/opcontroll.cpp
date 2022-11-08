@@ -253,13 +253,14 @@ void intakeCont()
             master.rumble(".");
         }
     } 
-    else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
-        if(getFrisbeesInIntake() > 0 && getFrisbeesInIntake() == frisbeesInIntakeAtShootTime && sylib::millis() - frisbeeEnteredTrackStartTime >= 200 && sylib::millis() - frisbeeEnteredTrackStartTime < 400){
-            intake.move_velocity(200);
-        }
-        else{
-            intake.move_velocity(-200);
-        }
+    else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L2)){
+        shootSingleFrisbee();
+        // if(getFrisbeesInIntake() > 0 && getFrisbeesInIntake() == frisbeesInIntakeAtShootTime && sylib::millis() - frisbeeEnteredTrackStartTime >= 200 && sylib::millis() - frisbeeEnteredTrackStartTime < 400){
+        //     intake.move_velocity(200);
+        // }
+        // else{
+        //     intake.move_velocity(-200);
+        // }
         
     } 
     else{
