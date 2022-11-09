@@ -215,37 +215,38 @@ void opcontrol() {
 	int flyVelError = 0;
 	chassis_light_default();
 	angler.set_value(true);
-	flywheelRPMTarget = 2250;
+	flywheelRPMTarget = 2350;
 	uint32_t clock = sylib::millis();
 	while (true){
 		control_ticks++;
-		
-		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){ // SHIFT KEY
-			if(master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)){
-				leftDrive.move_velocity(125);
-				rightDrive.move_velocity(-125);
-			}
-			else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)){
-				leftDrive.move_velocity(-125);
-				rightDrive.move_velocity(125);
-			}
-			else{
-				drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
-			}
-		}
-		else{
-			if(master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
-				leftDrive.move_velocity(-125);
-				rightDrive.move_velocity(-125);
-			}
-			else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
-        		leftDrive.move_velocity(125);
-        		rightDrive.move_velocity(125);
-			}
-			else{
-				drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
-			}
-		}
+		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+
+		// if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){ // SHIFT KEY
+		// 	if(master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)){
+		// 		leftDrive.move_velocity(125);
+		// 		rightDrive.move_velocity(-125);
+		// 	}
+		// 	else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)){
+		// 		leftDrive.move_velocity(-125);
+		// 		rightDrive.move_velocity(125);
+		// 	}
+		// 	else{
+		// 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+		// 	}
+		// }
+		// else{
+		// 	if(master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
+		// 		leftDrive.move_velocity(-125);
+		// 		rightDrive.move_velocity(-125);
+		// 	}
+		// 	else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
+        // 		leftDrive.move_velocity(125);
+        // 		rightDrive.move_velocity(125);
+		// 	}
+		// 	else{
+		// 		drive(master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y), master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+		// 	}
+		// }
 		
 		
 		if(partner.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT) &&

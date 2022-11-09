@@ -180,7 +180,7 @@ void flywheelCont()
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
         {
-            flywheelRPMTarget = 2250;
+            flywheelRPMTarget = 2350;
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
         {
@@ -247,8 +247,8 @@ void intakeCont()
             master.rumble(".");
         }
     } 
-    else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L2)){
-        shootSingleFrisbee();
+    else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+        intake.move_voltage(-12000);
         // if(getFrisbeesInIntake() > 0 && getFrisbeesInIntake() == frisbeesInIntakeAtShootTime && sylib::millis() - frisbeeEnteredTrackStartTime >= 200 && sylib::millis() - frisbeeEnteredTrackStartTime < 400){
         //     intake.move_velocity(200);
         // }
