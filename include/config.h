@@ -56,6 +56,7 @@ int getRollerColor();
 void spinCloseRoller();
 void farSideHalfWP();
 void shootSingleFrisbee(int cutoffMs = 2000);
+void skillsAuto();
 
 //variables
 extern int flywheelRPMTarget;

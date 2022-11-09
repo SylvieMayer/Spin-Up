@@ -40,8 +40,8 @@ sylib::SpeedControllerInfo flywheelController (
 );
 
 sylib::Motor flywheel(17, 3600,true, flywheelController);
-sylib::Addrled trackLighting(1,1,24);
-sylib::Addrled chassisLighting1(1,3,64);
+sylib::Addrled trackLighting(22,1,24);
+sylib::Addrled chassisLighting1(22,5,64);
 sylib::Addrled chassisLighting2(22,3,64);
 
 pros::Motor intake(14);
@@ -54,7 +54,7 @@ pros::Motor rightDrive2(16, true);
 pros::Motor rightDrive3(20, true);
 
 pros::ADIAnalogIn frisbeeTrackSensor(2);
-pros::ADIDigitalOut stringShooter(1, false);
+pros::ADIDigitalOut stringShooter(6, false);
 pros::ADIDigitalOut angler(4, false);
 pros::Distance indexerSensor(5);
 pros::Imu imu(2);
