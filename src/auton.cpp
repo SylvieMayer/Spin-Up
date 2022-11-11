@@ -351,12 +351,7 @@ void setRollerBlue(){
     intake.move_velocity(0);
 }
 
-void farSideHalfWP(){
-    flywheel.set_velocity_custom_controller(3600);
-    intake.move_voltage(12000);
-    driveDistance(40,3000, 165);
-    turnToAngle(34, 500);
-    sylib::delay(100);
+void shootAllFrisbees(){
     int frisbeesAtStart = getFrisbeesInIntake();
     int timeAtStart = sylib::millis();
     while(std::abs(flywheel.get_velocity_error()) > 25 && sylib::millis() < timeAtStart + 1000){
@@ -365,9 +360,17 @@ void farSideHalfWP(){
     while(getFrisbeesInIntake() > 0 && sylib::millis() < timeAtStart + 3500){
         intake.move_voltage(-12000);
     }
-    // std::cout << "addrled size: " << sylib::Addrled::getAllAddrleds().size() << std::endl;
     sylib::delay(50);
     intake.move_velocity(0);
+}
+
+void farSideHalfWP(){
+    flywheel.set_velocity_custom_controller(3600);
+    intake.move_voltage(12000);
+    driveDistance(40,3000, 165);
+    turnToAngle(34, 500);
+    sylib::delay(100);
+    shootAllFrisbees();
     turnToAngle(135,1000);
     flywheel.set_velocity_custom_controller(3700);
     if(getFrisbeesInIntake() < 3){
@@ -392,13 +395,7 @@ void farSideHalfWP(){
     intake.move_velocity(200);
     turnToAngle(5, 500);
     intake.move_velocity(0);
-    frisbeesAtStart = getFrisbeesInIntake();
-    sylib::delay(200);
-
-    for(int i = 0;i < frisbeesAtStart; i++){
-        shootSingleFrisbee();
-
-    }
+    shootAllFrisbees();
 }
 
 void spinCloseRoller(){
@@ -417,77 +414,32 @@ void spinCloseRoller(){
 
 
 void skillsAuto(){
-    flywheel.set_velocity_custom_controller(3450);
+    flywheel.set_velocity(3600);
+    moveChassis(2250, 2250);
+    sylib::delay(200);
+    intake.move_velocity(125);
+    sylib::delay(500);
+    intake.move_velocity(0);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    driveDistance(2,500);
     intake.move_voltage(12000);
-    driveDistance(40,3000, 125);
-    turnToAngle(35, 500);
-    driveDistance(5, 750);
-    sylib::delay(1000);
-    int frisbeesAtStart = getFrisbeesInIntake();
-    for(int i = 0;i < frisbeesAtStart-1; i++){
-
-        while(std::abs(flywheel.get_velocity_error()) > 30){
-            sylib::delay(10);
-        }
-        flywheel.set_velocity_custom_controller(3100);
-
-        shootSingleFrisbee(3600);
-        angler.set_value(false);
-        sylib::delay(200);
-    }
-    intake.move_velocity(-200);
-    sylib::delay(1300);
+    turnToAngle(-45,1000);
+    driveDistance(8, 1000);
+    turnToAngle(90,1500);
     intake.move_velocity(0);
-
-    turnToAngle(130,1000);
-    flywheel.set_velocity_custom_controller(3300);
-    if(getFrisbeesInIntake() < 3){
-        intake.move_voltage(12000);
-    }
-    else{
-        intake.move_voltage(0);
-    }
-    driveDistance(57, 3000, 150);
-    angler.set_value(false);
-    turnToAngle(3,800);
-    intake.move_velocity(0);
-    moveChassis(3550, 3550);
-    sylib::delay(500);
-    intake.move_velocity(-150);
-    sylib::delay(500);
-    leftDrive.move_velocity(0);
-    rightDrive.move_velocity(0);
-    driveDistance(2,500);
-    intake.move_velocity(200);
-    turnToAngle(5, 500);
+    moveChassis(3500, 3500);
     sylib::delay(400);
+    intake.move_velocity(125);
+    sylib::delay(500);
     intake.move_velocity(0);
-    frisbeesAtStart = getFrisbeesInIntake();
-    sylib::delay(500);
-
-    for(int i = 0;i < 5; i++){
-        sylib::delay(200);
-        intake.move_velocity(-200);
-        sylib::delay(1000);
-        intake.move_velocity(200);
-
-    }
-    driveDistance(15, 2000);
-    turnToAngle(-90, 900);
-    driveDistance(-20, 5000,100);
-
-    moveChassis(3550, 3550);
-    sylib::delay(500);
-    intake.move_velocity(-150);
-    sylib::delay(500);
     leftDrive.move_velocity(0);
     rightDrive.move_velocity(0);
-    driveDistance(2,500);
-    intake.move_velocity(0);
-
-    turnToAngle(-45,600);
-    driveDistance(12, 600);
-    stringShooter.set_value(true);
-    driveDistance(-24, 2000);
-    driveDistance(4, 500);
+    driveDistance(3,500);
+    turnToAngle(0,500);
+    angler.set_value(true);
+    driveDistance(55, 4000);
+    sylib::delay(100);
+    shootAllFrisbees();
+    driveDistance(-55, 4000);
 }
