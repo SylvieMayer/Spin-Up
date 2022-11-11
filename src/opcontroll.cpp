@@ -17,25 +17,36 @@ double real_right = 0;
 double deadzone = 5;
 int flywheelRPMTarget = 0;
 
+int output_left = 0;
+int output_right = 0;
 
+int previous_left = 0;
+int previous_right = 0;
+
+int drive_ticks = 0;
 void drive(double left, double right){
-    left = left*100;
-    right = right*100;
+    drive_ticks++;
    
     if (std::abs(left) > deadzone){
-      real_left=-left*1.05 + 5;
-      leftDrive.move_voltage(real_left*120);
+      real_left=-left*1.05 + 6.35;
+      leftDrive.move_voltage(real_left*100);
     }
     else {
       leftDrive.move_velocity(0);
     }
 
     if (std::abs(right) > deadzone){
-      real_right=-right*1.05 + 5;
-      rightDrive.move_voltage(real_right*120);
+      real_right=-right*1.05 + 6.35;
+    //   if(std::abs(real_right > pre))
+      previous_right = real_right;
+      rightDrive.move_voltage(real_right*100);
     }
     else{
+        previous_right = 0;
       rightDrive.move_velocity(0);
+    }
+    if(drive_ticks % 10 == 0){
+        printf("%d, %f, %f, %f, %f\n", sylib::millis(), left, real_left, right, real_right);
     }
 }
 std::uint32_t oldTime = 0;
@@ -188,7 +199,7 @@ void flywheelCont()
         }
         else if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
-            flywheelRPMTarget = 2500;
+            flywheelRPMTarget = 2600;
         }
         else if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){
             flywheelRPMTarget = 5000;

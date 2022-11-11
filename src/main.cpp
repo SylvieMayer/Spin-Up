@@ -283,7 +283,7 @@ void opcontrol() {
 		}
 		if(control_ticks%1 == 0){
 			
-			printf("%d,%f,%f,%d\n", sylib::millis(), flywheel.get_velocity_target(), flywheel.get_velocity(),flywheel.get_applied_voltage());
+			// printf("%d,%f,%f,%d\n", sylib::millis(), flywheel.get_velocity_target(), flywheel.get_velocity(),flywheel.get_applied_voltage());
 		}
 		// odomControlLoop();
 		sylib::delay_until(&clock,10);

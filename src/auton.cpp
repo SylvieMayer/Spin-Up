@@ -19,7 +19,7 @@ double current_right = 0;
 double current_avg = 0;
 
 void moveChassis(double left, double right){
-    printf("%d,%f,%f\n", sylib::millis(), left, right);
+    // printf("%d,%f,%f\n", sylib::millis(), left, right);
     leftDrive.move_voltage(left);
     rightDrive.move_voltage(right);
 }
@@ -365,6 +365,7 @@ void farSideHalfWP(){
     while(getFrisbeesInIntake() > 0 && sylib::millis() < timeAtStart + 3500){
         intake.move_voltage(-12000);
     }
+    std::cout << "addrled size: " << sylib::Addrled::getAllAddrleds().size() << std::endl;
     sylib::delay(50);
     intake.move_velocity(0);
     turnToAngle(135,1000);

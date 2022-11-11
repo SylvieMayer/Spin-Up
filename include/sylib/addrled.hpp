@@ -49,7 +49,6 @@ class Addrled : private Device {
     std::vector<uint32_t> template_buffer;
     std::vector<uint32_t> rotation_buffer;
     std::vector<uint32_t> buffer_saved;
-    static std::vector<sylib::Addrled*>& getAllAddrleds();
     const V5_DeviceT device;
     static void setAddrledUpdateCycles(int count);
     sylib::SylibAddrledControlMode addrledControlMode;
@@ -70,6 +69,8 @@ class Addrled : private Device {
     int pulsePixelsShifted     = 0;
 
    public:
+       static std::vector<sylib::Addrled*>& getAllAddrleds();
+
     /**
      * \brief Creates an Addrled object for the given port and specifications.
      *
