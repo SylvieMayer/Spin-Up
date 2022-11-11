@@ -365,7 +365,7 @@ void farSideHalfWP(){
     while(getFrisbeesInIntake() > 0 && sylib::millis() < timeAtStart + 3500){
         intake.move_voltage(-12000);
     }
-    std::cout << "addrled size: " << sylib::Addrled::getAllAddrleds().size() << std::endl;
+    // std::cout << "addrled size: " << sylib::Addrled::getAllAddrleds().size() << std::endl;
     sylib::delay(50);
     intake.move_velocity(0);
     turnToAngle(135,1000);
@@ -378,7 +378,7 @@ void farSideHalfWP(){
     }
     driveDistance(18, 1500, 150);
     angler.set_value(false);
-    turnToAngle(122,1000);
+    turnToAngle(125,1000);
     driveDistance(38, 1500, 150);
     turnToAngle(0,800);
     intake.move_velocity(0);
