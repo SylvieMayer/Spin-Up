@@ -226,7 +226,7 @@ void odomControlLoop(void * param){
 	int flyVelError = 0;
 	int start_left = leftRot.get_position();
     int start_right = rightRot.get_position();
-	while(true){
+	while(pros::competition::is_autonomous()){
 		ticks++;
 
 		current_left = -leftRot.get_position();
