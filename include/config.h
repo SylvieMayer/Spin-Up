@@ -65,3 +65,5 @@ extern int frisbeeTrackLightingInitial;
 
 extern sylib::MedianFilter hueFilter;
 extern sylib::MedianFilter distanceFilter;
+
+void shootAllFrisbees();

@@ -168,7 +168,6 @@ void competition_initialize() {
  */
 
 
-
 void autonomous() {
 	pros::Task odomTask(odomControlLoop);
 	chassisLighting1.set_all(0x00ff00);
@@ -186,7 +185,6 @@ void autonomous() {
 	else{
 		trackLighting.set_all(0xee03ff);
 	}
-	
 }
 
 /**

@@ -257,18 +257,19 @@ void odomControlLoop(void * param){
 
 int getFrisbeesInIntake(){
     int sensorDistance = distanceFilter.filter(indexerSensor.get());
-    if(sensorDistance > 100){
-        return 0;
-    }
-    else if(sensorDistance > 55){
-        return 1;
-    }
-    else if(sensorDistance > 35){
-        return 2;
-    }
-    else{
-        return 3;
-    }
+    // if(sensorDistance > 100){
+    //     return 0;
+    // }
+    // else if(sensorDistance > 55){
+    //     return 1;
+    // }
+    // else if(sensorDistance > 35){
+    //     return 2;
+    // }
+    // else{
+    //     return 3;
+    // }
+    return 2;
 }
 
 void shootSingleFrisbee(int cutoffMs){
@@ -358,7 +359,8 @@ void shootAllFrisbees(){
         sylib::delay(10);
     }
     while(getFrisbeesInIntake() > 0 && sylib::millis() < timeAtStart + 3500){
-        intake.move_voltage(-12000);
+        sylib::delay(10);
+        // intake.move_voltage(-12000);
     }
     sylib::delay(50);
     intake.move_velocity(0);
@@ -396,6 +398,7 @@ void farSideHalfWP(){
     turnToAngle(5, 500);
     intake.move_velocity(0);
     shootAllFrisbees();
+    intake.move_velocity(0);
 }
 
 void spinCloseRoller(){
