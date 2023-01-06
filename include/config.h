@@ -57,6 +57,10 @@ void spinCloseRoller();
 void farSideHalfWP();
 void shootSingleFrisbee(int cutoffMs = 2000);
 void skillsAuto();
+void lowGoalPushFar();
+void lowGoalPushClose();
+void highGoalShootClose();
+
 
 //variables
 extern int flywheelRPMTarget;

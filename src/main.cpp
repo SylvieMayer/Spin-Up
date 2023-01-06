@@ -25,7 +25,7 @@
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-const int autonRoutine = 1;
+const int autonRoutine = 3;
 
 
 double actualCurrentLimit(double temperature){
@@ -174,12 +174,16 @@ void autonomous() {
 	chassisLighting2.set_all(0x00ff00);
 	trackLighting.set_all(0x000000);
 	if(autonRoutine==1){
-		farSideHalfWP();
+		lowGoalPushClose();
 	}
 	else if(autonRoutine == 2){
-		spinCloseRoller();
+		lowGoalPushFar();
 	}
 	else if(autonRoutine == 3){
+		highGoalShootClose();
+
+	}
+	else if(autonRoutine == 4){
 		skillsAuto();
 	}
 	else{

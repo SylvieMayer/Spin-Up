@@ -257,19 +257,18 @@ void odomControlLoop(void * param){
 
 int getFrisbeesInIntake(){
     int sensorDistance = distanceFilter.filter(indexerSensor.get());
-    // if(sensorDistance > 100){
-    //     return 0;
-    // }
-    // else if(sensorDistance > 55){
-    //     return 1;
-    // }
-    // else if(sensorDistance > 35){
-    //     return 2;
-    // }
-    // else{
-    //     return 3;
-    // }
-    return 2;
+    if(sensorDistance > 100){
+        return 0;
+    }
+    else if(sensorDistance > 55){
+        return 1;
+    }
+    else if(sensorDistance > 35){
+        return 2;
+    }
+    else{
+        return 3;
+    }
 }
 
 void shootSingleFrisbee(int cutoffMs){
@@ -287,7 +286,7 @@ void shootSingleFrisbee(int cutoffMs){
         lightReading = frisbeeTrackSensor.get_value();
         if(lightReading <= startReading*0.65){
             frisbeeInTrack = true;
-            // flywheel.set_voltage(-12000);
+            flywheel.set_voltage(-12000);
         }  
         sylib::delay(10);
     }
@@ -360,19 +359,68 @@ void shootAllFrisbees(){
     }
     while(getFrisbeesInIntake() > 0 && sylib::millis() < timeAtStart + 3500){
         sylib::delay(10);
-        // intake.move_voltage(-12000);
+        intake.move_voltage(-12000);
     }
     sylib::delay(50);
     intake.move_velocity(0);
 }
+void lowGoalPushClose(){
+    flywheel.set_velocity_custom_controller(1500);
+    sylib::delay(1000);
+    shootAllFrisbees();
+    leftDrive.move_velocity(100);
+    rightDrive.move_velocity(100);
+    sylib::delay(1100);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    sylib::delay(500);
+    turnToAngle(-90, 1000);
+    intake.move_velocity(0);
+    moveChassis(3550, 3550);
+    sylib::delay(500);
+    intake.move_velocity(-75);
+    sylib::delay(250);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    driveDistance(2,500);
+    intake.move_velocity(0);
+    flywheel.set_velocity_custom_controller(0);
+}
+
+void lowGoalPushFar(){
+    flywheel.set_velocity_custom_controller(1500);
+    sylib::delay(1000);
+    shootAllFrisbees();
+    leftDrive.move_velocity(100);
+    rightDrive.move_velocity(100);
+    sylib::delay(1100);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    sylib::delay(500);
+    turnToAngle(90, 1000);
+    intake.move_velocity(0);
+    moveChassis(3550, 3550);
+    sylib::delay(500);
+    intake.move_velocity(-75);
+    sylib::delay(250);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+    driveDistance(2,500);
+    intake.move_velocity(0);
+    flywheel.set_velocity_custom_controller(0);
+}
 
 void farSideHalfWP(){
-    flywheel.set_velocity_custom_controller(3600);
+    flywheel.set_velocity_custom_controller(3500);
     intake.move_voltage(12000);
     driveDistance(40,3000, 165);
-    turnToAngle(34, 500);
+    turnToAngle(37, 500);
     sylib::delay(100);
-    shootAllFrisbees();
+    // shootAllFrisbees();
+    int f_at_start = getFrisbeesInIntake();
+    for(int i = 0; i < f_at_start; i++){
+        shootSingleFrisbee(1500);
+    }
     turnToAngle(135,1000);
     flywheel.set_velocity_custom_controller(3700);
     if(getFrisbeesInIntake() < 3){
@@ -383,7 +431,7 @@ void farSideHalfWP(){
     }
     driveDistance(18, 1500, 150);
     angler.set_value(false);
-    turnToAngle(125,1000);
+    turnToAngle(122,1000);
     driveDistance(38, 1500, 150);
     turnToAngle(0,800);
     intake.move_velocity(0);
@@ -395,8 +443,9 @@ void farSideHalfWP(){
     rightDrive.move_velocity(0);
     driveDistance(2,500);
     intake.move_velocity(200);
-    turnToAngle(5, 500);
+    turnToAngle(9, 500);
     intake.move_velocity(0);
+    sylib::delay(200);
     shootAllFrisbees();
     intake.move_velocity(0);
 }
@@ -415,9 +464,29 @@ void spinCloseRoller(){
     intake.move_velocity(0);
 }
 
+void highGoalShootClose(){
+    flywheel.set_velocity_custom_controller(5000);
+    sylib::delay(5000);
+    shootAllFrisbees();
+    intake.move_velocity(0);
+    moveChassis(2250, 2250);
+    sylib::delay(200);
+    intake.move_velocity(-75);
+    sylib::delay(350);
+    intake.move_velocity(0);
+    leftDrive.move_velocity(0);
+    rightDrive.move_velocity(0);
+
+
+    driveDistance(3,500);
+    intake.move_velocity(0);
+    flywheel.set_velocity_custom_controller(0);
+
+}
+
 
 void skillsAuto(){
-    flywheel.set_velocity(3600);
+    flywheel.set_velocity_custom_controller(3600);
     moveChassis(2250, 2250);
     sylib::delay(200);
     intake.move_velocity(125);
