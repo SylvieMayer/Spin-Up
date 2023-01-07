@@ -139,18 +139,23 @@ void disabled() {
  */
 void competition_initialize() {
 	if(autonRoutine == 1){
-		chassisLighting1.set_all(0xab03ff);
-		chassisLighting2.set_all(0xab03ff);
+		chassisLighting1.set_all(0xff00aa);
+		chassisLighting2.set_all(0xff00aa);
 		trackLighting.set_all(0x000000);
 	}
 	else if(autonRoutine == 2){
-		chassisLighting1.set_all(0x00fcd2);
-		chassisLighting2.set_all(0x00fcd2);
+		chassisLighting1.set_all(0x8f8f8f);
+		chassisLighting2.set_all(0x8f8f8f);
 		trackLighting.set_all(0x000000);
 	}
 	else if(autonRoutine == 3){
-		chassisLighting1.set_all(0xff55d2);
-		chassisLighting2.set_all(0xff55d2);
+		chassisLighting1.set_all(0x00ffaa);
+		chassisLighting2.set_all(0x00ffaa);
+		trackLighting.set_all(0x000000);
+	}
+	else if(autonRoutine == 4){
+		chassisLighting1.set_all(0x95ff00);
+		chassisLighting2.set_all(0x95ff00);
 		trackLighting.set_all(0x000000);
 	}
 }

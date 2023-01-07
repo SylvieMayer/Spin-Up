@@ -40,9 +40,9 @@ sylib::SpeedControllerInfo flywheelController (
 );
 
 sylib::Motor flywheel(17, 3600,true, flywheelController);
-sylib::Addrled chassisLighting1(1,1,24);
-sylib::Addrled trackLighting(22,3,64);
-sylib::Addrled chassisLighting2(1,3,64);
+sylib::Addrled chassisLighting1(22,7,63);
+sylib::Addrled trackLighting(22,3,24);
+sylib::Addrled chassisLighting2(22,8,63);
 
 pros::Motor intake(14);
 
